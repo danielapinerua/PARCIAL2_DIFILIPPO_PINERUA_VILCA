@@ -1,0 +1,34 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.filter-bar__controls {
+  display: flex;
+  flex: 1 1 20rem;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.filter-bar__controls > * {
+  flex: 1 1 12rem;
+}
+
+.filter-bar__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 639px) {
+  .filter-bar__controls > * {
+    flex-basis: 100%;
+  }
+
+  .filter-bar__actions,
+  .filter-bar__actions .button {
+    width: 100%;
+  }
+}
