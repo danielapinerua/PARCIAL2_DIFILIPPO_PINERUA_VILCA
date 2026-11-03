@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import ToastProvider from '@/components/Toast/ToastProvider';
 import HomePage from '@/pages/home/HomePage';
+import Login from '@/components/Login/Login';
 
 import AuthProvider from '@/contexts/AuthContext';
 import ProtectedRoute from '@/contexts/ProtectedRoute';
@@ -14,7 +15,7 @@ function App() {
           <Routes>
 
             <Route path="/" element={<HomePage />} />
-
+            <Route path="/login" element={<Login />} />
             <Route
               path="/dashboard"
               element={
