@@ -1,24 +1,64 @@
 .login-page {
+    box-sizing: border-box;
+    width: 100%;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: var(--spacing-6);
+    padding: var(--spacing-6, 2rem);
+    background:
+        radial-gradient(circle at 15% 20%, rgba(244, 162, 97, 0.18), transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(15, 118, 110, 0.15), transparent 45%),
+        var(--color-primary-light);
 }
 
 .login-page .card {
+    position: relative;
+    box-sizing: border-box;
     width: 100%;
     max-width: 420px;
+    overflow: hidden;
+    padding: var(--spacing-6, 2rem);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(30, 58, 95, 0.12);
+}
+
+.login-page .card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
 }
 
 .login-page form {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-4);
+    gap: var(--spacing-5, 1.25rem);
+    margin-top: var(--spacing-4, 1rem);
+}
+
+.login-page button[type="submit"] {
+    width: 100%;
+    margin-top: var(--spacing-3, 0.75rem);
 }
 
 .login-error {
-    color: var(--color-danger);
-    font-size: var(--font-size-sm);
     margin: 0;
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+    border-left: 3px solid var(--color-danger);
+    border-radius: 6px;
+    background: #FEE2E2;
+    color: var(--color-danger);
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+@media (max-width: 480px) {
+    .login-page {
+        align-items: flex-start;
+        padding: 15vh var(--spacing-4, 1rem) var(--spacing-4, 1rem);
+    }
 }

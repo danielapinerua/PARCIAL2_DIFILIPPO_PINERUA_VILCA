@@ -1,44 +1,52 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import users from '@/data/users';
+import initialUsers from '@/data/users';
 import Input from '@/components/Input/Input';
 import Button from '@/components/Button/Button';
 import Card from '@/components/Card/Card';
 import './Login.css';
+
+const getUsers = () => {
+    try {
+        const stored = localStorage.getItem('patasana_users');
+        return stored ? JSON.parse(stored) : initialUsers;
+    } catch {
+        return initialUsers;
+    }
+};
+
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
+
     const handleLogin = (e) => {
         e.preventDefault();
-        const user = users.find(
-            (user) => user.email === email && user.password === password
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const user = getUsers().find(
+            (u) => u.email.toLowerCase() === normalizedEmail && u.password === password
         );
+
         if (!user) {
             setError('El correo electrónico o la contraseña son incorrectos.');
             return;
         }
-        login(user);
-        switch (user.role) {
-            case 'client':
-                navigate('/dashboard');
-                break;
-            case 'veterinarian':
-                navigate('/dashboard');
-                break;
-            case 'receptionist':
-                navigate('/dashboard');
-                break;
-            case 'admin':
-                navigate('/admin');
-                break;
-            default:
-                navigate('/');
+
+        if (!user.active) {
+            setError('Tu cuenta está desactivada. Contactá a la veterinaria.');
+            return;
         }
+
+        const { password: _, ...userWithoutPassword } = user;
+        login(userWithoutPassword);
+
+        navigate(user.role === 'admin' ? '/dashboard' : '/home');
     };
+
     return (
         <div className="login-page">
             <Card title="Iniciar sesión">
@@ -70,7 +78,7 @@ function Login() {
                             {error}
                         </p>
                     )}
-                    <Button type="submit" block>
+                    <Button type="submit">
                         Iniciar sesión
                     </Button>
                 </form>
@@ -78,4 +86,5 @@ function Login() {
         </div>
     );
 }
+
 export default Login;

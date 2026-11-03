@@ -1,32 +1,44 @@
 const users = [
-    {
-        id: 1,
-        name: 'Daniela Piñerua',
-        email: 'cliente@patasana.com',
-        password: '123456',
-        role: 'client'
-    },
-    {
-        id: 2,
-        name: 'Dr. Marcos Di Filippo',
-        email: 'veterinario@patasana.com',
-        password: '123456',
-        role: 'veterinarian'
-    },
-    {
-        id: 3,
-        name: 'Gianluca Vilca',
-        email: 'recepcion@patasana.com',
-        password: '123456',
-        role: 'receptionist'
-    },
-    {
-        id: 4,
-        name: 'Admin PataSana',
-        email: 'admin@patasana.com',
-        password: '123456',
-        role: 'admin'
-    }
+  {
+    id: 1,
+    firstName: 'Daniela',
+    lastName: 'Piñerua',
+    email: 'cliente@patasana.com',
+    password: '123456',
+    phone: '1155550001',
+    role: 'client',
+    active: true
+  },
+  {
+    id: 2,
+    firstName: 'Marcos',
+    lastName: 'Di Filippo',
+    email: 'veterinario@patasana.com',
+    password: '123456',
+    phone: '1155550002',
+    role: 'veterinarian',
+    active: true
+  },
+  {
+    id: 3,
+    firstName: 'Gianluca',
+    lastName: 'Vilca',
+    email: 'recepcion@patasana.com',
+    password: '123456',
+    phone: '1155550003',
+    role: 'receptionist',
+    active: true
+  },
+  {
+    id: 4,
+    firstName: 'Admin',
+    lastName: 'PataSana',
+    email: 'admin@patasana.com',
+    password: '123456',
+    phone: '1155550004',
+    role: 'admin',
+    active: true
+  }
 ];
 
 export default users;
