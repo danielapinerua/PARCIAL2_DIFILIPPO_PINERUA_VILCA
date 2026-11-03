@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
-import HomePage from '@/pages/home/HomePage';
 import Login from '@/components/Login/Login';
-
+import RoleHome from '@/features/home/components/RoleHome';
 import AuthProvider from '@/contexts/AuthContext';
 import ProtectedRoute from '@/contexts/ProtectedRoute';
 
@@ -19,7 +18,7 @@ function App() {
               path="/home"
               element={
                 <ProtectedRoute allowedRoles={['client', 'veterinarian', 'receptionist']}>
-                  <h1>Inicio</h1>
+                  <RoleHome />
                 </ProtectedRoute>
               }
             />
@@ -32,9 +31,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            <Route path="/componentes" element={<HomePage />} />
-
+            
             <Route path="*" element={<h1>Página no encontrada - 404</h1>} />
           </Routes>
         </BrowserRouter>

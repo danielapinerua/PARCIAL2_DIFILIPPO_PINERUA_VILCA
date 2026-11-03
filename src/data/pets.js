@@ -1,0 +1,14 @@
+const pets = [
+    { id: 1, ownerId: 1, name: 'Luna', species: 'dog', breed: 'Labrador', sex: 'female', birthDate: '2019-04-12', weight: 28.5, active: true },
+    { id: 2, ownerId: 1, name: 'Milo', species: 'cat', breed: 'Siamés', sex: 'male', birthDate: '2021-08-03', weight: 4.2, active: true },
+    { id: 3, ownerId: 1, name: 'Toby', species: 'dog', breed: 'Beagle', sex: 'male', birthDate: '2017-01-20', weight: 12.1, active: true },
+    { id: 4, ownerId: 1, name: 'Kiwi', species: 'bird', breed: 'Cotorra', sex: 'female', birthDate: '2022-02-14', weight: 0.1, active: true },
+    { id: 5, ownerId: 1, name: 'Rocky', species: 'dog', breed: 'Bulldog francés', sex: 'male', birthDate: '2020-06-10', weight: 13.4, active: true },
+    { id: 6, ownerId: 1, name: 'Mía', species: 'cat', breed: 'Persa', sex: 'female', birthDate: '2018-11-25', weight: 3.8, active: true },
+    { id: 7, ownerId: 1, name: 'Coco', species: 'rodent', breed: 'Hámster sirio', sex: 'male', birthDate: '2023-05-02', weight: 0.05, active: true },
+    { id: 8, ownerId: 1, name: 'Simba', species: 'cat', breed: 'Mestizo', sex: 'male', birthDate: '2016-03-15', weight: 5.6, active: true },
+    { id: 9, ownerId: 1, name: 'Nina', species: 'dog', breed: 'Caniche', sex: 'female', birthDate: '2015-09-08', weight: 6.3, active: true },
+    { id: 10, ownerId: 1, name: 'Pancho', species: 'other', breed: 'Tortuga terrestre', sex: 'male', birthDate: '2010-07-01', weight: 1.2, active: false }
+];
+
+export default pets;
