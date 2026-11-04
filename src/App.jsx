@@ -10,7 +10,9 @@ import { ClientPaymentsPage } from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
 import { AdminUsersPage } from '@/features/users';
 import { AdminAppointmentsPage } from '@/features/appointments';
-
+import { AdminTreatmentsPage } from '@/features/treatments';
+import { AdminHistoryPage } from '@/features/history';
+import { AdminPaymentsPage } from '@/features/payments';
 
 function AppointmentsRoute() {
   const { user } = useAuth();
@@ -18,6 +20,30 @@ function AppointmentsRoute() {
   return user?.role === 'admin'
     ? <AdminAppointmentsPage />
     : <ClientAppointmentsPage />;
+}
+
+function TreatmentsRoute() {
+  const { user } = useAuth();
+
+  return user?.role === 'admin'
+    ? <AdminTreatmentsPage />
+    : <ClientTreatmentsPage />;
+}
+
+function HistoryRoute() {
+  const { user } = useAuth();
+
+  return user?.role === 'admin'
+    ? <AdminHistoryPage />
+    : <ClientHistoryPage />;
+}
+
+function PaymentsRoute() {
+  const { user } = useAuth();
+
+  return user?.role === 'admin'
+    ? <AdminPaymentsPage />
+    : <ClientPaymentsPage />;
 }
 
 function App() {
@@ -59,29 +85,30 @@ function App() {
             <Route
               path="/treatments"
               element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <ClientTreatmentsPage />
+                <ProtectedRoute allowedRoles={['client', 'admin']}>
+                  <TreatmentsRoute />
                 </ProtectedRoute>
               }
+            />
+            
+            <Route
+            path="/history"
+            element={
+            <ProtectedRoute allowedRoles={['client', 'admin']}>
+              <HistoryRoute />
+              </ProtectedRoute>
+            }
             />
 
             <Route
-              path="/history"
-              element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <ClientHistoryPage />
-                </ProtectedRoute>
-              }
+            path="/payments"
+            element={
+            <ProtectedRoute allowedRoles={['client', 'admin']}>
+              <PaymentsRoute />
+              </ProtectedRoute>
+            }
             />
 
-            <Route
-              path="/payments"
-              element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <ClientPaymentsPage />
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/profile"
