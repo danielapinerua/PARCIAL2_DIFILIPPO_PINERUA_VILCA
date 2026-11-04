@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/features/auth';
 import VetHomePage from './VetHomePage';
 import ReceptionistHomePage from './ReceptionistHomePage';
 import ClientHomePage from './ClientHomePage';

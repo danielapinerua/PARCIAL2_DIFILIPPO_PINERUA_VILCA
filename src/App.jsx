@@ -1,9 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
-import Login from '@/components/Login/Login';
-import RoleHome from '@/features/home/components/RoleHome';
-import AuthProvider from '@/contexts/AuthContext';
-import ProtectedRoute from '@/contexts/ProtectedRoute';
+import { AuthProvider, Login, ProtectedRoute } from '@/features/auth';
+import { RoleHome } from '@/features/home';
 
 function App() {
   return (
@@ -31,7 +29,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             <Route path="*" element={<h1>Página no encontrada - 404</h1>} />
           </Routes>
         </BrowserRouter>

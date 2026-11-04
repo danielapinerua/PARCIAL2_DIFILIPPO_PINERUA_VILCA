@@ -1,13 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-    getAppointments,
-    getTreatments,
-    getPets,
-    getUsers,
-    getPayments,
-} from '@/services/storage';
+import { useAuth } from '@/features/auth';
+import { getAppointments } from '@/features/appointments';
+import { getTreatments } from '@/features/treatments';
+import { getPets } from '@/features/pets';
+import { getUsers } from '@/features/users';
+import { getPayments } from '@/features/payments';
 import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
@@ -16,6 +14,7 @@ import Card from '@/components/Card/Card';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import ProgressBar from '@/components/ProgressBar/ProgressBar';
+import Spinner from '@/components/Spinner/Spinner';
 import StatCard from '@/components/StatCard/StatCard';
 import Table from '@/components/Table/Table';
 import './ClientHomePage.css';
@@ -49,16 +48,50 @@ function ClientHomePage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-    const appointments = getAppointments();
-    const treatments = getTreatments();
-    const payments = getPayments();
-    const users = getUsers();
+    const [appointments, setAppointments] = useState([]);
+    const [treatments, setTreatments] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let active = true;
+
+        Promise.all([
+            getAppointments(),
+            getTreatments(),
+            getPayments(),
+            getPets(),
+            getUsers(),
+        ])
+            .then(([appointmentsData, treatmentsData, paymentsData, petsData, usersData]) => {
+                if (!active) return;
+                setAppointments(appointmentsData);
+                setTreatments(treatmentsData);
+                setPayments(paymentsData);
+                setPets(petsData);
+                setUsers(usersData);
+            })
+            .catch((err) => {
+                if (active) setError(err.message);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
     const today = toISODate(new Date());
 
     // Solo las mascotas del cliente logueado
     const myPets = useMemo(
-        () => getPets().filter((p) => p.ownerId === user.id && p.active),
-        [user.id]
+        () => pets.filter((p) => p.ownerId === user.id && p.active),
+        [pets, user.id]
     );
     const myPetIds = myPets.map((p) => p.id);
 
@@ -102,6 +135,37 @@ function ClientHomePage() {
         logout();
         navigate('/login');
     };
+
+    if (loading) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`${user.firstName} ${user.lastName}`}
+                roleLabel="Cliente"
+                roleColor="gray"
+                onLogout={handleLogout}
+            >
+                <Spinner />
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`${user.firstName} ${user.lastName}`}
+                roleLabel="Cliente"
+                roleColor="gray"
+                onLogout={handleLogout}
+            >
+                <EmptyState
+                    title="No se pudieron cargar tus datos"
+                    message={error}
+                />
+            </AppLayout>
+        );
+    }
 
     const columns = [
         { key: 'date', header: 'Fecha', render: (row) => formatDate(row.date) },

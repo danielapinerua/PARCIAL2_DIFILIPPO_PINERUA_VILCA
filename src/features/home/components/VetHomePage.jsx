@@ -1,13 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-    getAppointments,
-    saveAppointments,
-    getTreatments,
-    saveTreatments,
-    getPets,
-} from '@/services/storage';
+import { useAuth } from '@/features/auth';
+import { getAppointments, updateAppointment } from '@/features/appointments';
+import { getTreatments, updateTreatment } from '@/features/treatments';
+import { getPets } from '@/features/pets';
 import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
@@ -17,6 +13,7 @@ import EmptyState from '@/components/EmptyState/EmptyState';
 import Modal from '@/components/Modal/Modal';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import ProgressBar from '@/components/ProgressBar/ProgressBar';
+import Spinner from '@/components/Spinner/Spinner';
 import Table from '@/components/Table/Table';
 import Textarea from '@/components/Textarea/Textarea';
 import useToast from '@/components/Toast/useToast';
@@ -38,18 +35,42 @@ const SIDEBAR_ITEMS = [
     { href: '/profile', label: 'Mi perfil' },
 ];
 
-const getPetName = (petId) => getPets().find((p) => p.id === petId)?.name ?? 'Sin datos';
-
 function VetHomePage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const toast = useToast();
 
-    const [appointments, setAppointments] = useState(() => getAppointments());
-    const [treatments, setTreatments] = useState(() => getTreatments());
+    const [appointments, setAppointments] = useState([]);
+    const [treatments, setTreatments] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
     const [attending, setAttending] = useState(null);
     const [notes, setNotes] = useState('');
     const [notesError, setNotesError] = useState('');
+
+    useEffect(() => {
+        let active = true;
+
+        Promise.all([getAppointments(), getTreatments(), getPets()])
+            .then(([appointmentsData, treatmentsData, petsData]) => {
+                if (!active) return;
+                setAppointments(appointmentsData);
+                setTreatments(treatmentsData);
+                setPets(petsData);
+            })
+            .catch((err) => {
+                if (active) setError(err.message);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const today = toISODate(new Date());
     const todayLabel = new Date().toLocaleDateString('es-AR', {
@@ -57,6 +78,8 @@ function VetHomePage() {
         day: 'numeric',
         month: 'long',
     });
+
+    const getPetName = (petId) => pets.find((p) => p.id === petId)?.name ?? 'Sin datos';
 
     // Agenda del día del veterinario logueado, ordenada por horario
     const todayAppointments = useMemo(
@@ -89,44 +112,88 @@ function VetHomePage() {
 
     const closeAttend = () => setAttending(null);
 
-    const handleAttend = () => {
+    const handleAttend = async () => {
+        if (!attending) return;
+
         if (!notes.trim()) {
             setNotesError('Escribí las notas de la atención para poder finalizar el turno.');
             return;
         }
 
-        // RF12: el turno pasa a completed con sus notas
-        const updatedAppointments = appointments.map((a) =>
-            a.id === attending.id ? { ...a, status: 'completed', notes: notes.trim() } : a
-        );
-        setAppointments(updatedAppointments);
-        saveAppointments(updatedAppointments);
+        const current = attending;
+        setSaving(true);
 
-        // RF15: si se completaron todas las sesiones, el tratamiento finaliza
-        if (attending.treatmentId) {
-            const treatment = treatments.find((t) => t.id === attending.treatmentId);
-            const completed = updatedAppointments.filter(
-                (a) => a.treatmentId === treatment.id && a.status === 'completed'
-            ).length;
+        try {
+            // RF12: el turno pasa a completed con sus notas
+            const updatedAppointments = appointments.map((a) =>
+                a.id === current.id ? { ...a, status: 'completed', notes: notes.trim() } : a
+            );
 
-            if (completed >= treatment.totalSessions) {
-                const updatedTreatments = treatments.map((t) =>
-                    t.id === treatment.id ? { ...t, status: 'completed' } : t
-                );
-                setTreatments(updatedTreatments);
-                saveTreatments(updatedTreatments);
-                toast.success(`Tratamiento "${treatment.name}" finalizado.`);
+            await updateAppointment(current.id, {
+                status: 'completed',
+                notes: notes.trim(),
+            });
+            setAppointments(updatedAppointments);
+
+            // RF15: si se completaron todas las sesiones, el tratamiento finaliza
+            if (current.treatmentId) {
+                const treatment = treatments.find((t) => t.id === current.treatmentId);
+                const completed = updatedAppointments.filter(
+                    (a) => a.treatmentId === treatment.id && a.status === 'completed'
+                ).length;
+
+                if (completed >= treatment.totalSessions) {
+                    await updateTreatment(treatment.id, { status: 'completed' });
+                    setTreatments((currentTreatments) =>
+                        currentTreatments.map((t) =>
+                            t.id === treatment.id ? { ...t, status: 'completed' } : t
+                        )
+                    );
+                    toast.success(`Tratamiento "${treatment.name}" finalizado.`);
+                }
             }
-        }
 
-        toast.success(`Turno de ${getPetName(attending.petId)} atendido.`);
-        closeAttend();
+            toast.success(`Turno de ${getPetName(current.petId)} atendido.`);
+            closeAttend();
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
+
+    if (loading) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`Dr. ${user.firstName} ${user.lastName}`}
+                roleLabel="Veterinario"
+                roleColor="green"
+                onLogout={handleLogout}
+            >
+                <Spinner />
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`Dr. ${user.firstName} ${user.lastName}`}
+                roleLabel="Veterinario"
+                roleColor="green"
+                onLogout={handleLogout}
+            >
+                <EmptyState title="No se pudieron cargar tus datos" message={error} />
+            </AppLayout>
+        );
+    }
 
     const columns = [
         { key: 'time', header: 'Hora' },
@@ -209,7 +276,9 @@ function VetHomePage() {
                         <Button variant="secondary" onClick={closeAttend}>
                             Cancelar
                         </Button>
-                        <Button onClick={handleAttend}>Finalizar turno</Button>
+                        <Button onClick={handleAttend} loading={saving}>
+                            Finalizar turno
+                        </Button>
                     </>
                 }
             >

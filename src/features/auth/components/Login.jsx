@@ -1,50 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import initialUsers from '@/data/users';
+import { useAuth } from '../AuthContext';
+import { login as loginRequest } from '../api';
 import Input from '@/components/Input/Input';
 import Button from '@/components/Button/Button';
 import Card from '@/components/Card/Card';
 import './Login.css';
 
-const getUsers = () => {
-    try {
-        const stored = localStorage.getItem('patasana_users');
-        return stored ? JSON.parse(stored) : initialUsers;
-    } catch {
-        return initialUsers;
-    }
-};
-
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
 
-        const normalizedEmail = email.trim().toLowerCase();
-        const user = getUsers().find(
-            (u) => u.email.toLowerCase() === normalizedEmail && u.password === password
-        );
-
-        if (!user) {
-            setError('El correo electrónico o la contraseña son incorrectos.');
-            return;
+        try {
+            const user = await loginRequest(email, password);
+            login(user);
+            navigate(user.role === 'admin' ? '/dashboard' : '/home');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
-
-        if (!user.active) {
-            setError('Tu cuenta está desactivada. Contactá a la veterinaria.');
-            return;
-        }
-
-        const { password: _, ...userWithoutPassword } = user;
-        login(userWithoutPassword);
-
-        navigate(user.role === 'admin' ? '/dashboard' : '/home');
     };
 
     return (
@@ -78,7 +62,7 @@ function Login() {
                             {error}
                         </p>
                     )}
-                    <Button type="submit">
+                    <Button type="submit" loading={loading}>
                         Iniciar sesión
                     </Button>
                 </form>

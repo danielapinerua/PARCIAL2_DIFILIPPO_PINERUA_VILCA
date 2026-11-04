@@ -1,0 +1,1 @@
+export { getPayments } from './api';

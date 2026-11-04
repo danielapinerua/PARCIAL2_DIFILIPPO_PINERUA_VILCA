@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { getAppointments, saveAppointments, getPets, getUsers } from '@/services/storage';
+import { useAuth } from '@/features/auth';
+import { getAppointments, updateAppointment } from '@/features/appointments';
+import { getPets } from '@/features/pets';
+import { getUsers } from '@/features/users';
 import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
@@ -10,6 +12,7 @@ import Card from '@/components/Card/Card';
 import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import PageHeader from '@/components/PageHeader/PageHeader';
+import Spinner from '@/components/Spinner/Spinner';
 import Table from '@/components/Table/Table';
 import useToast from '@/components/Toast/useToast';
 import './ReceptionistHomePage.css';
@@ -39,11 +42,35 @@ function ReceptionistHomePage() {
     const navigate = useNavigate();
     const toast = useToast();
 
-    const [appointments, setAppointments] = useState(() => getAppointments());
+    const [appointments, setAppointments] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
     const [toConfirm, setToConfirm] = useState(null);
 
-    const pets = getPets();
-    const users = getUsers();
+    useEffect(() => {
+        let active = true;
+
+        Promise.all([getAppointments(), getPets(), getUsers()])
+            .then(([appointmentsData, petsData, usersData]) => {
+                if (!active) return;
+                setAppointments(appointmentsData);
+                setPets(petsData);
+                setUsers(usersData);
+            })
+            .catch((err) => {
+                if (active) setError(err.message);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const getPet = (petId) => pets.find((p) => p.id === petId);
     const getPetName = (petId) => getPet(petId)?.name ?? 'Sin datos';
@@ -81,20 +108,62 @@ function ReceptionistHomePage() {
         [appointments, today]
     );
 
-    const handleConfirm = () => {
-        const updated = appointments.map((a) =>
-            a.id === toConfirm.id ? { ...a, status: 'confirmed' } : a
-        );
-        setAppointments(updated);
-        saveAppointments(updated);
-        toast.success(`Turno de ${getPetName(toConfirm.petId)} confirmado.`);
-        setToConfirm(null);
+    const handleConfirm = async () => {
+        if (!toConfirm) return;
+
+        const current = toConfirm;
+        setSaving(true);
+
+        try {
+            const updated = await updateAppointment(current.id, { status: 'confirmed' });
+            setAppointments((currentAppointments) =>
+                currentAppointments.map((appointment) =>
+                    appointment.id === updated.id
+                        ? { ...appointment, ...updated }
+                        : appointment
+                )
+            );
+            toast.success(`Turno de ${getPetName(current.petId)} confirmado.`);
+            setToConfirm(null);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
+
+    if (loading) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`${user.firstName} ${user.lastName}`}
+                roleLabel="Recepción"
+                roleColor="yellow"
+                onLogout={handleLogout}
+            >
+                <Spinner />
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout
+                sidebarItems={SIDEBAR_ITEMS}
+                userName={`${user.firstName} ${user.lastName}`}
+                roleLabel="Recepción"
+                roleColor="yellow"
+                onLogout={handleLogout}
+            >
+                <EmptyState title="No se pudieron cargar los turnos" message={error} />
+            </AppLayout>
+        );
+    }
 
     const confirmAction = {
         key: 'actions',
@@ -178,7 +247,7 @@ function ReceptionistHomePage() {
                         ? `El turno de ${getPetName(toConfirm.petId)} del ${formatDate(toConfirm.date)} a las ${toConfirm.time} quedará confirmado.`
                         : ''
                 }
-                confirmLabel="Confirmar turno"
+                confirmLabel={saving ? 'Confirmando…' : 'Confirmar turno'}
                 onConfirm={handleConfirm}
                 onCancel={() => setToConfirm(null)}
             />
