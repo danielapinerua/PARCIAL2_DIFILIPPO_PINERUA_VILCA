@@ -1,9 +1,19 @@
 import Badge from '@/components/Badge/Badge'
+import BrandMark from '@/components/BrandMark/BrandMark'
 import Button from '@/components/Button/Button'
 import './Navbar.css'
 
+const getInitials = (name = '') =>
+  name
+    .replace(/^Dr\.\s*/, '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('')
+
 /**
- * Navbar — Top application bar.
+ * Navbar — Top bar above the content.
  *
  * @param {object} props
  * @param {string} props.userName Signed-in user name.
@@ -43,14 +53,19 @@ function Navbar({
             </span>
           </Button>
         </span>
-        <a className="navbar__brand" href="/">
-          PataSana
-        </a>
+        <span className="navbar__brand">
+          <BrandMark />
+        </span>
       </div>
       <div className="navbar__right">
         <div className="navbar__user">
-          <span className="navbar__user-name">{userName}</span>
-          {roleLabel && <Badge color={roleColor}>{roleLabel}</Badge>}
+          <span className="navbar__avatar" aria-hidden="true">
+            {getInitials(userName)}
+          </span>
+          <span className="navbar__user-info">
+            <span className="navbar__user-name">{userName}</span>
+            {roleLabel && <Badge color={roleColor}>{roleLabel}</Badge>}
+          </span>
         </div>
         <Button variant="ghost" size="sm" onClick={onLogout}>
           Salir

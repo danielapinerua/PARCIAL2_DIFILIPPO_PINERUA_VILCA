@@ -4,7 +4,8 @@ import Sidebar from '@/components/Sidebar/Sidebar'
 import './AppLayout.css'
 
 /**
- * AppLayout — Presentational application shell: navbar, sidebar and content.
+ * AppLayout — Presentational application shell: full-height sidebar,
+ * top bar and content.
  *
  * Owns the mobile sidebar UI state only. No router or authentication logic.
  *
@@ -49,23 +50,18 @@ function AppLayout({
       <a className="app-layout__skip-link" href="#main-content">
         Saltar al contenido
       </a>
-      <Navbar
-        userName={userName}
-        roleLabel={roleLabel}
-        roleColor={roleColor}
-        onLogout={onLogout}
-        onMenuClick={() => setIsSidebarOpen(true)}
-        isSidebarOpen={isSidebarOpen}
-        menuButtonRef={menuButtonRef}
-      />
-      <div className="app-layout__body">
-        <Sidebar items={sidebarItems} isOpen={isSidebarOpen} onClose={closeSidebar} />
-        <main
-          className="app-layout__main"
-          id="main-content"
-          tabIndex={-1}
-          inert={isSidebarOpen}
-        >
+      <Sidebar items={sidebarItems} isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <div className="app-layout__column" inert={isSidebarOpen}>
+        <Navbar
+          userName={userName}
+          roleLabel={roleLabel}
+          roleColor={roleColor}
+          onLogout={onLogout}
+          onMenuClick={() => setIsSidebarOpen(true)}
+          isSidebarOpen={isSidebarOpen}
+          menuButtonRef={menuButtonRef}
+        />
+        <main className="app-layout__main" id="main-content" tabIndex={-1}>
           <div className="app-layout__content">{children}</div>
         </main>
       </div>

@@ -8,8 +8,9 @@
   gap: var(--space-3);
   height: var(--navbar-height);
   padding: 0 var(--space-4);
-  background-color: var(--color-secondary);
-  color: var(--color-text-inverse);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .navbar__left,
@@ -18,19 +19,6 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-}
-
-.navbar__brand {
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.02em;
-  text-decoration: none;
-}
-
-.navbar__brand:hover {
-  color: var(--color-accent);
-  text-decoration: none;
 }
 
 .navbar__hamburger {
@@ -48,30 +36,39 @@
   background-color: currentColor;
 }
 
-.navbar .button--ghost {
-  color: var(--color-text-inverse);
-}
-
-.navbar .button--ghost:hover:not(:disabled) {
-  background-color: var(--color-secondary-dark);
-}
-
-.navbar :focus-visible {
-  outline-color: var(--color-accent);
-}
-
 .navbar__user {
   display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.navbar__avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-soft);
+  color: var(--color-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.navbar__user-info {
+  display: none;
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
 }
 
 .navbar__user-name {
-  display: none;
   overflow: hidden;
   max-width: 14rem;
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -81,13 +78,18 @@
     padding: 0 var(--space-6);
   }
 
-  .navbar__user-name {
-    display: inline;
+  .navbar__user-info {
+    display: inline-flex;
   }
 }
 
 @media (min-width: 768px) {
-  .navbar__menu {
+  .navbar__menu,
+  .navbar__brand {
     display: none;
+  }
+
+  .navbar {
+    justify-content: flex-end;
   }
 }
