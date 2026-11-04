@@ -74,3 +74,21 @@ export async function updateAppointment(id, changes) {
     }
     return response.json();
 }
+
+export async function createAppointment(appointment) {
+    if (!API_READY) {
+        const appointments = await getAppointments();
+        const nextId = appointments.reduce((max, a) => Math.max(max, a.id), 0) + 1;
+        const created = { ...appointment, id: nextId };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...appointments, created]));
+        return created;
+    }
+
+    const response = await fetch('/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointment),
+    });
+    if (!response.ok) throw new Error('No se pudo solicitar el turno.');
+    return response.json();
+}

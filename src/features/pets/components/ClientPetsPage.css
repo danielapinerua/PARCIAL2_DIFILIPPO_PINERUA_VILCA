@@ -1,0 +1,34 @@
+.client-pets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6, 1.5rem);
+}
+
+.client-pets__name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2, 0.5rem);
+    font-weight: 600;
+}
+
+.client-pets__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-2, 0.5rem);
+}
+
+.client-pets__form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-4, 1rem);
+}
+
+@media (max-width: 600px) {
+    .client-pets__form {
+        grid-template-columns: 1fr;
+    }
+
+    .client-pets__actions {
+        justify-content: flex-start;
+    }
+}

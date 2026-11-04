@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './NavItem.css'
 
 /**
@@ -11,9 +12,9 @@ import './NavItem.css'
  */
 function NavItem({ href, icon, label, isActive = false }) {
   return (
-    <a
+    <Link
       className={isActive ? 'nav-item nav-item--active' : 'nav-item'}
-      href={href}
+      to={href}
       aria-current={isActive ? 'page' : undefined}
     >
       {icon && (
@@ -22,7 +23,7 @@ function NavItem({ href, icon, label, isActive = false }) {
         </span>
       )}
       <span className="nav-item__label">{label}</span>
-    </a>
+    </Link>
   )
 }
 

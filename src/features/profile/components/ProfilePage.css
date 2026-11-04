@@ -1,0 +1,52 @@
+.profile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6, 1.5rem);
+}
+
+.profile__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-6, 1.5rem);
+    align-items: start;
+}
+
+.profile__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4, 1rem);
+}
+
+.profile__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-4, 1rem);
+}
+
+.profile__role {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3, 0.75rem);
+}
+
+.profile__role-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+.profile__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-3, 0.75rem);
+    margin-top: var(--spacing-2, 0.5rem);
+}
+
+@media (max-width: 480px) {
+    .profile__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile__row {
+        grid-template-columns: 1fr;
+    }
+}

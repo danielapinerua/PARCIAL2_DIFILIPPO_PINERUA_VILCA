@@ -1,0 +1,1 @@
+export { default as ClientHistoryPage } from './components/ClientHistoryPage';

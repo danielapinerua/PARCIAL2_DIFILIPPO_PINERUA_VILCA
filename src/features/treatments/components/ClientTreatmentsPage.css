@@ -1,0 +1,65 @@
+.client-treatments {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6, 1.5rem);
+}
+
+.client-treatments__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4, 1rem);
+}
+
+.client-treatments__center {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-6, 1.5rem);
+}
+
+.client-treatments__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-4, 1rem);
+    margin-bottom: var(--spacing-3, 0.75rem);
+}
+
+.client-treatments__name {
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--color-secondary);
+}
+
+.client-treatments__meta {
+    margin: var(--spacing-1, 0.25rem) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+.client-treatments__notes {
+    margin: 0 0 var(--spacing-4, 1rem);
+}
+
+.client-treatments__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-3, 0.75rem);
+    margin-top: var(--spacing-3, 0.75rem);
+}
+
+.client-treatments__footer .client-treatments__meta {
+    margin: 0;
+}
+
+.client-treatments__sessions {
+    margin-top: var(--spacing-4, 1rem);
+}
+
+@media (max-width: 600px) {
+    .client-treatments__header,
+    .client-treatments__footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

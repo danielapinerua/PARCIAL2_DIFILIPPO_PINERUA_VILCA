@@ -2,6 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
 import { AuthProvider, Login, ProtectedRoute } from '@/features/auth';
 import { RoleHome } from '@/features/home';
+import { ClientPetsPage } from '@/features/pets';
+import { ClientAppointmentsPage } from '@/features/appointments';
+import { ClientTreatmentsPage } from '@/features/treatments';
+import { ClientHistoryPage } from '@/features/history';
+import { ClientPaymentsPage } from '@/features/payments';
+import { ProfilePage } from '@/features/profile';
 
 function App() {
   return (
@@ -17,6 +23,59 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['client', 'veterinarian', 'receptionist']}>
                   <RoleHome />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pets"
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <ClientPetsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <ClientAppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/treatments"
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <ClientTreatmentsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <ClientHistoryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/payments"
+              element={
+                <ProtectedRoute allowedRoles={['client']}>
+                  <ClientPaymentsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={['client', 'veterinarian', 'receptionist', 'admin']}>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
