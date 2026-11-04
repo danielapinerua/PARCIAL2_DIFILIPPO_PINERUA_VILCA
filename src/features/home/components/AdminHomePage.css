@@ -1,0 +1,30 @@
+.admin-home {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.admin-home__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.admin-home__details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.admin-home__appointment-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.admin-home__appointment-stats p {
+    margin: 0;
+    padding: 12px;
+    background-color: var(--color-bg, #f5f6f8);
+    border-radius: 8px;
+}

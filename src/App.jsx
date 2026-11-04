@@ -1,13 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
 import { AuthProvider, Login, ProtectedRoute } from '@/features/auth';
-import { RoleHome } from '@/features/home';
+import { RoleHome, AdminHomePage } from '@/features/home';
 import { ClientPetsPage } from '@/features/pets';
 import { ClientAppointmentsPage } from '@/features/appointments';
 import { ClientTreatmentsPage } from '@/features/treatments';
 import { ClientHistoryPage } from '@/features/history';
 import { ClientPaymentsPage } from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
+
 
 function App() {
   return (
@@ -84,7 +85,7 @@ function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <h1>Panel de administración</h1>
+                  <AdminHomePage />
                 </ProtectedRoute>
               }
             />
