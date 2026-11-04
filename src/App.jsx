@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
-import { AuthProvider, Login, ProtectedRoute } from '@/features/auth';
+import { AuthProvider, Login, ProtectedRoute, useAuth } from '@/features/auth';
 import { RoleHome, AdminHomePage } from '@/features/home';
 import { ClientPetsPage } from '@/features/pets';
 import { ClientAppointmentsPage } from '@/features/appointments';
@@ -8,7 +8,17 @@ import { ClientTreatmentsPage } from '@/features/treatments';
 import { ClientHistoryPage } from '@/features/history';
 import { ClientPaymentsPage } from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
+import { AdminUsersPage } from '@/features/users';
+import { AdminAppointmentsPage } from '@/features/appointments';
 
+
+function AppointmentsRoute() {
+  const { user } = useAuth();
+
+  return user?.role === 'admin'
+    ? <AdminAppointmentsPage />
+    : <ClientAppointmentsPage />;
+}
 
 function App() {
   return (
@@ -40,11 +50,12 @@ function App() {
             <Route
               path="/appointments"
               element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <ClientAppointmentsPage />
+                <ProtectedRoute allowedRoles={['client', 'admin']}>
+                  <AppointmentsRoute />
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/treatments"
               element={
@@ -88,6 +99,14 @@ function App() {
                   <AdminHomePage />
                 </ProtectedRoute>
               }
+            />
+            <Route
+            path="/users"
+            element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsersPage />
+              </ProtectedRoute>
+            }
             />
 
             <Route path="*" element={<h1>Página no encontrada - 404</h1>} />
