@@ -7,8 +7,8 @@
     align-items: center;
     padding: var(--spacing-6, 2rem);
     background:
-        radial-gradient(circle at 15% 20%, rgba(244, 162, 97, 0.18), transparent 40%),
-        radial-gradient(circle at 85% 80%, rgba(15, 118, 110, 0.15), transparent 45%),
+                radial-gradient(circle at 15% 20%, rgb(232 145 58 / 20%), transparent 40%),
+                radial-gradient(circle at 85% 80%, rgb(62 85 104 / 15%), transparent 45%),
         var(--color-primary-light);
 }
 

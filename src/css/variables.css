@@ -5,29 +5,30 @@
  * custom properties): 640px, 768px (sidebar drawer), 1024px.
  */
 :root {
-  /* Brand */
-  --color-primary: #0f766e;
-  --color-primary-dark: #0b5d57;
-  --color-primary-light: #e6f2f0;
-  --color-secondary: #1e3a5f;
-  --color-secondary-dark: #162c47;
-  --color-secondary-light: #e8edf3;
-  --color-accent: #f4a261;
+  /* Brand — Gato atigrado */
+  --color-primary: #3e5568;
+  --color-primary-dark: #2f4252;
+  --color-primary-light: #e9eef2;
+  --color-secondary: #222f3a;
+  --color-secondary-dark: #18222a;
+  --color-secondary-light: #e8ecf0;
+  --color-accent: #e8913a;
+  --color-accent-soft: #fcefe1;
 
   /* Base */
   --color-white: #ffffff;
-  --color-black: #111827;
+  --color-black: #1c252d;
   --color-text: var(--color-black);
-  --color-text-muted: #6b7280;
+  --color-text-muted: #5c6873;
   --color-text-inverse: var(--color-white);
   --color-on-accent: var(--color-black);
-  --color-border: #d1d5db;
-  --color-border-strong: #6b7280;
+  --color-border: #dde2e7;
+  --color-border-strong: #7b8792;
   --color-surface: var(--color-white);
-  --color-bg: var(--color-primary-light);
-  --color-overlay: rgb(17 24 39 / 55%);
-  --color-disabled-bg: #f3f4f6;
-  --color-disabled-text: #9ca3af;
+  --color-bg: #f5f6f8;
+  --color-overlay: rgb(28 37 45 / 55%);
+  --color-disabled-bg: #eef1f4;
+  --color-disabled-text: #9ca6af;
 
   /* Status — solid (icons, bars, borders) */
   --color-success: #16a34a;
@@ -88,9 +89,9 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgb(17 24 39 / 6%);
-  --shadow-md: 0 4px 12px rgb(17 24 39 / 8%);
-  --shadow-lg: 0 12px 32px rgb(17 24 39 / 12%);
+  --shadow-sm: 0 1px 2px rgb(34 47 58 / 6%);
+  --shadow-md: 0 4px 12px rgb(34 47 58 / 9%);
+  --shadow-lg: 0 12px 32px rgb(34 47 58 / 14%);
 
   /* Z-index */
   --z-sticky: 20;
