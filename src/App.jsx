@@ -3,7 +3,7 @@ import ToastProvider from '@/components/Toast/ToastProvider';
 import { AuthProvider, Login, ProtectedRoute, useAuth } from '@/features/auth';
 import { RoleHome, AdminHomePage } from '@/features/home';
 import { ClientPetsPage } from '@/features/pets';
-import { ClientAppointmentsPage } from '@/features/appointments';
+import { ClientAppointmentsPage, Scheduler } from '@/features/appointments';
 import { ClientTreatmentsPage } from '@/features/treatments';
 import { ClientHistoryPage } from '@/features/history';
 import { ClientPaymentsPage } from '@/features/payments';
@@ -60,6 +60,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['client', 'veterinarian', 'receptionist']}>
                   <RoleHome />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/schedule"
+              element={
+                <ProtectedRoute allowedRoles={['veterinarian', 'receptionist']}>
+                  <Scheduler />
                 </ProtectedRoute>
               }
             />

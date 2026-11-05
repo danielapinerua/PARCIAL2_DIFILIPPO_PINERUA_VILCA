@@ -26,6 +26,7 @@ const STATUS = {
 
 const SIDEBAR_ITEMS = [
     { href: '/home', label: 'Inicio', isActive: true },
+    { href: '/schedule', label: 'Mi agenda' },
     { href: '/appointments', label: 'Turnos' },
     { href: '/clients', label: 'Clientes y mascotas' },
     { href: '/payments', label: 'Pagos' },

@@ -1,0 +1,395 @@
+.scheduler {
+  /* Tema FullCalendar "classic" alineado a los tokens del proyecto */
+  --fc-classic-primary: var(--color-primary);
+  --fc-classic-primary-foreground: var(--color-text-inverse);
+  --fc-classic-border: var(--color-border);
+  --fc-classic-strong-border: var(--color-border-strong);
+  --fc-classic-background: var(--color-surface);
+  --fc-classic-faint: var(--color-bg);
+  --fc-classic-muted: var(--color-secondary-light);
+  --fc-classic-foreground: var(--color-text);
+  --fc-classic-muted-foreground: var(--color-text-muted);
+  --fc-classic-today: var(--color-primary-light);
+  --fc-classic-now: var(--color-accent);
+  --fc-classic-highlight: var(--color-info-soft);
+  --fc-classic-event: var(--color-primary);
+  --fc-classic-event-contrast: var(--color-text-inverse);
+}
+
+/* Card recorta su contenido; el popover de "Periodo" necesita salir. */
+.scheduler-card > .card {
+  overflow: visible;
+}
+
+.scheduler__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20rem;
+}
+
+/* Barra de herramientas -------------------------------------------------- */
+
+.scheduler__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.scheduler__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  order: 1;
+}
+
+.scheduler__nav .button--ghost {
+  min-width: 2rem;
+  padding-inline: var(--space-2);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.scheduler__range {
+  order: 3;
+  flex-basis: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-secondary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduler__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  order: 2;
+  margin-left: auto;
+}
+
+.scheduler__views {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+}
+
+.scheduler__period {
+  position: relative;
+}
+
+.scheduler__period-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  min-width: 16rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.scheduler__period-panel .form-field {
+  flex: 1 1 9rem;
+}
+
+/* Filtro y leyenda ------------------------------------------------------- */
+
+.scheduler__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.scheduler__filter {
+  flex: 0 1 16rem;
+  min-width: 0;
+}
+
+.scheduler__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.scheduler__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.scheduler__legend-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.scheduler__legend-dot--pending {
+  background-color: var(--color-warning);
+}
+
+.scheduler__legend-dot--confirmed {
+  background-color: var(--color-info);
+}
+
+.scheduler__legend-dot--completed {
+  background-color: var(--color-success);
+}
+
+.scheduler__legend-dot--cancelled {
+  background-color: var(--color-danger);
+}
+
+.scheduler__notice {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Calendario ------------------------------------------------------------- */
+
+.scheduler__calendar {
+  height: clamp(30rem, calc(100vh - 24rem), 50rem);
+}
+
+/* Etiquetas horarias: fondo propio para que la línea de la grilla no las cruce. */
+.scheduler .scheduler-slot-header__inner {
+  padding-right: var(--space-1);
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Eventos ---------------------------------------------------------------- */
+
+.scheduler .scheduler-event {
+  --scheduler-color: var(--color-neutral);
+  --scheduler-soft: var(--color-neutral-soft);
+  --scheduler-text: var(--color-neutral-text);
+
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-decoration: none;
+  cursor: default;
+}
+
+/* En Mes el tema agrega un punto propio; usamos solo el del estado. */
+.scheduler .scheduler-event > div:empty {
+  display: none;
+}
+
+.scheduler .scheduler-event__inner {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.scheduler .scheduler-event__inner--block {
+  height: 100%;
+}
+
+.scheduler .scheduler-event__inner--list {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.scheduler .scheduler-event--pending {
+  --scheduler-color: var(--color-warning);
+  --scheduler-soft: var(--color-warning-soft);
+  --scheduler-text: var(--color-warning-text);
+}
+
+.scheduler .scheduler-event--confirmed {
+  --scheduler-color: var(--color-info);
+  --scheduler-soft: var(--color-info-soft);
+  --scheduler-text: var(--color-info-text);
+}
+
+.scheduler .scheduler-event--completed {
+  --scheduler-color: var(--color-success);
+  --scheduler-soft: var(--color-success-soft);
+  --scheduler-text: var(--color-success-text);
+}
+
+.scheduler .scheduler-event--cancelled {
+  --scheduler-color: var(--color-danger);
+  --scheduler-soft: var(--color-danger-soft);
+  --scheduler-text: var(--color-danger-text);
+}
+
+.scheduler-event__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2px 5px;
+  overflow: hidden;
+  border-left: 3px solid var(--scheduler-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--scheduler-soft);
+  color: var(--color-text);
+  font-size: 0.6875rem;
+  line-height: 1.25;
+}
+
+.scheduler-event__line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scheduler-event__line--pet {
+  padding-right: 0.95rem;
+  color: var(--scheduler-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.scheduler-event__line--reason {
+  color: var(--color-text-muted);
+}
+
+.scheduler-event__status {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: var(--radius-full);
+  background-color: var(--scheduler-color);
+  color: var(--color-white);
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+/* Vista Mes -------------------------------------------------------------- */
+
+.scheduler-event__month {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.scheduler-event__month-pet {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduler-event__month-initial {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--scheduler-text);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.scheduler-event__dot {
+  flex: 0 0 auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-full);
+}
+
+.scheduler-event__dot--pending {
+  background-color: var(--color-warning);
+}
+
+.scheduler-event__dot--confirmed {
+  background-color: var(--color-info);
+}
+
+.scheduler-event__dot--completed {
+  background-color: var(--color-success);
+}
+
+.scheduler-event__dot--cancelled {
+  background-color: var(--color-danger);
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .scheduler__range {
+    order: -1;
+  }
+
+  .scheduler__controls {
+    margin-left: 0;
+  }
+
+  .scheduler__filter {
+    flex-basis: 100%;
+  }
+
+  .scheduler__legend {
+    margin-left: 0;
+  }
+
+  .scheduler__calendar {
+    height: clamp(28rem, calc(100dvh - 18rem), 40rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .scheduler__toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-4);
+  }
+
+  .scheduler__nav,
+  .scheduler__range,
+  .scheduler__controls {
+    order: initial;
+  }
+
+  .scheduler__range {
+    flex-basis: auto;
+  }
+
+  .scheduler__controls {
+    margin-left: 0;
+  }
+}
