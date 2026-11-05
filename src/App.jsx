@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ToastProvider from '@/components/Toast/ToastProvider';
 import { AuthProvider, Login, ProtectedRoute, useAuth } from '@/features/auth';
 import { RoleHome, AdminHomePage } from '@/features/home';
-import { ClientPetsPage } from '@/features/pets';
+import { ClientPetsPage, VetPetsPage } from '@/features/pets';
 import { ClientAppointmentsPage, Scheduler, ReceptionistAppointmentsPage, AdminAppointmentsPage } from '@/features/appointments';
 import { ClientTreatmentsPage } from '@/features/treatments';
 import { ClientHistoryPage } from '@/features/history';
@@ -25,6 +25,14 @@ function AppointmentsRoute() {
   }
 
   return <ClientAppointmentsPage />;
+}
+
+function PetsRoute() {
+  const { user } = useAuth();
+
+  return user?.role === 'veterinarian'
+    ? <VetPetsPage />
+    : <ClientPetsPage />;
 }
 
 function TreatmentsRoute() {
@@ -85,11 +93,11 @@ function App() {
             />
 
             <Route
-              path="/pets"
-              element={
-                <ProtectedRoute allowedRoles={['client']}>
-                  <ClientPetsPage />
-                </ProtectedRoute>
+            path="/pets"
+            element={
+            <ProtectedRoute allowedRoles={['client', 'veterinarian']}>
+               <PetsRoute />
+               </ProtectedRoute>
               }
             />
 
