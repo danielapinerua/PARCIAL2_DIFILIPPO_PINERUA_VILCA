@@ -3,13 +3,12 @@ import ToastProvider from '@/components/Toast/ToastProvider';
 import { AuthProvider, Login, ProtectedRoute, useAuth } from '@/features/auth';
 import { RoleHome, AdminHomePage } from '@/features/home';
 import { ClientPetsPage } from '@/features/pets';
-import { ClientAppointmentsPage, Scheduler } from '@/features/appointments';
+import { ClientAppointmentsPage, Scheduler, ReceptionistAppointmentsPage, AdminAppointmentsPage } from '@/features/appointments';
 import { ClientTreatmentsPage } from '@/features/treatments';
 import { ClientHistoryPage } from '@/features/history';
-import { ClientPaymentsPage } from '@/features/payments';
+import { ClientPaymentsPage, ReceptionistPaymentsPage} from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
-import { AdminUsersPage } from '@/features/users';
-import { AdminAppointmentsPage } from '@/features/appointments';
+import { AdminUsersPage, ReceptionistClientsPage} from '@/features/users';
 import { AdminTreatmentsPage } from '@/features/treatments';
 import { AdminHistoryPage } from '@/features/history';
 import { AdminPaymentsPage } from '@/features/payments';
@@ -17,9 +16,15 @@ import { AdminPaymentsPage } from '@/features/payments';
 function AppointmentsRoute() {
   const { user } = useAuth();
 
-  return user?.role === 'admin'
-    ? <AdminAppointmentsPage />
-    : <ClientAppointmentsPage />;
+  if (user?.role === 'admin') {
+    return <AdminAppointmentsPage />;
+  }
+
+  if (user?.role === 'receptionist') {
+    return <ReceptionistAppointmentsPage />;
+  }
+
+  return <ClientAppointmentsPage />;
 }
 
 function TreatmentsRoute() {
@@ -41,9 +46,15 @@ function HistoryRoute() {
 function PaymentsRoute() {
   const { user } = useAuth();
 
-  return user?.role === 'admin'
-    ? <AdminPaymentsPage />
-    : <ClientPaymentsPage />;
+  if (user?.role === 'admin') {
+    return <AdminPaymentsPage />;
+  }
+
+  if (user?.role === 'receptionist') {
+    return <ReceptionistPaymentsPage />;
+  }
+
+  return <ClientPaymentsPage />;
 }
 
 function App() {
@@ -85,7 +96,7 @@ function App() {
             <Route
               path="/appointments"
               element={
-                <ProtectedRoute allowedRoles={['client', 'admin']}>
+                <ProtectedRoute allowedRoles={['client', 'admin', 'receptionist']}>
                   <AppointmentsRoute />
                 </ProtectedRoute>
               }
@@ -112,7 +123,7 @@ function App() {
             <Route
             path="/payments"
             element={
-            <ProtectedRoute allowedRoles={['client', 'admin']}>
+            <ProtectedRoute allowedRoles={['client', 'admin', 'receptionist']}>
               <PaymentsRoute />
               </ProtectedRoute>
             }
@@ -141,6 +152,14 @@ function App() {
             element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminUsersPage />
+              </ProtectedRoute>
+            }
+            />
+            <Route
+            path="/clients"
+            element={
+            <ProtectedRoute allowedRoles={['receptionist']}>
+              <ReceptionistClientsPage />
               </ProtectedRoute>
             }
             />
