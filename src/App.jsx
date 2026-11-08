@@ -9,7 +9,7 @@ import { ClientHistoryPage } from '@/features/history';
 import { ClientPaymentsPage, ReceptionistPaymentsPage} from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
 import { AdminUsersPage, ReceptionistClientsPage} from '@/features/users';
-import { AdminTreatmentsPage } from '@/features/treatments';
+import { AdminTreatmentsPage, VetTreatmentsPage } from '@/features/treatments';
 import { AdminHistoryPage } from '@/features/history';
 import { AdminPaymentsPage } from '@/features/payments';
 
@@ -36,11 +36,17 @@ function PetsRoute() {
 }
 
 function TreatmentsRoute() {
-  const { user } = useAuth();
+    const { user } = useAuth();
 
-  return user?.role === 'admin'
-    ? <AdminTreatmentsPage />
-    : <ClientTreatmentsPage />;
+    if (user?.role === 'admin') {
+        return <AdminTreatmentsPage />;
+    }
+
+    if (user?.role === 'veterinarian') {
+        return <VetTreatmentsPage />;
+    }
+
+    return <ClientTreatmentsPage />;
 }
 
 function HistoryRoute() {
@@ -113,8 +119,8 @@ function App() {
             <Route
               path="/treatments"
               element={
-                <ProtectedRoute allowedRoles={['client', 'admin']}>
-                  <TreatmentsRoute />
+              <ProtectedRoute allowedRoles={['client', 'admin', 'veterinarian']}>
+                <TreatmentsRoute />
                 </ProtectedRoute>
               }
             />
