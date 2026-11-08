@@ -1,0 +1,115 @@
+.vet-history {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    padding-bottom: 32px;
+}
+
+.vet-history-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.vet-history-timeline__item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+
+.vet-history-timeline__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.vet-history-timeline__date {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.vet-history-timeline__reason {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.vet-history-timeline__info {
+    margin: 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.vet-history-timeline__notes {
+    margin: 4px 0;
+    padding: 12px 14px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.vet-history-timeline__editor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vet-history-timeline__editor label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.vet-history-timeline__editor textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.vet-history-timeline__editor textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.vet-history-timeline__editor > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+    .vet-history-timeline__item {
+        padding: 16px;
+    }
+
+    .vet-history-timeline__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .vet-history-timeline__reason {
+        font-size: 16px;
+    }
+}
