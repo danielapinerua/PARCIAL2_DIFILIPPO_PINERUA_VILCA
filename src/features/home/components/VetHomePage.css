@@ -27,6 +27,10 @@
     color: var(--color-text-muted);
 }
 
+.vet-home__treatments .button {
+    margin-top: var(--space-3);
+}
+
 .vet-home__stack {
     display: flex;
     flex-direction: column;

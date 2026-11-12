@@ -1,173 +1,62 @@
-/* Página de tratamientos */
-
 .vet-treatments {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
-/* Encabezado */
-
-.vet-treatments__page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+.vet-treatments__center {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
 }
-
-/* Lista de tratamientos */
 
 .vet-treatments__list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-/* Formularios */
-
-.vet-treatments form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+.vet-treatments__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
-/* Títulos de los formularios */
-
-.vet-treatments form h2,
-.vet-treatments form h3 {
-    margin: 0 0 4px;
+.vet-treatments__name {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: var(--font-size-lg);
 }
 
-/* Cada campo del formulario */
-
-.vet-treatments form > div {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.vet-treatments__meta {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
-/* Etiquetas */
-
-.vet-treatments form label {
-    font-weight: 600;
-    font-size: 14px;
+.vet-treatments__notes {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text);
 }
 
-/* Campos de texto, selectores y áreas de texto */
-
-.vet-treatments form input,
-.vet-treatments form select,
-.vet-treatments form textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 11px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font: inherit;
-    font-size: 14px;
+.vet-treatments__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
-/* Área de observaciones */
-
-.vet-treatments form textarea {
-    min-height: 90px;
-    resize: vertical;
+.vet-treatments__footer .vet-treatments__meta {
+  margin: 0;
 }
 
-/* Cuando seleccionamos un campo */
-
-.vet-treatments form input:focus,
-.vet-treatments form select:focus,
-.vet-treatments form textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-}
-
-/* Tarjetas de tratamientos */
-
-.vet-treatments__list > * {
-    width: 100%;
-}
-
-/* Separación de la información */
-
-.vet-treatments__header {
-    display: flex;
-    justify-content: space-between;
+@media (max-width: 600px) {
+  .vet-treatments__card-header,
+  .vet-treatments__footer {
     align-items: flex-start;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-}
-
-/* Información y acciones de cada tratamiento */
-
-.vet-treatments__list p {
-    line-height: 1.5;
-}
-
-/* Botones de las tarjetas */
-
-.vet-treatments__list button {
-    margin: 4px;
-}
-
-/* Tabla de sesiones */
-
-.vet-treatments table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 16px;
-}
-
-/* Celdas de la tabla */
-
-.vet-treatments th,
-.vet-treatments td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-/* Encabezados */
-
-.vet-treatments th {
-    font-weight: 600;
-    background-color: #f9fafb;
-}
-
-/* Contenedor de la tabla */
-
-.vet-treatments {
-    min-width: 0;
-}
-
-.vet-treatments table {
-    font-size: 14px;
-}
-
-
-/* Adaptación para pantallas pequeñas */
-
-@media (max-width: 768px) {
-    .vet-treatments__page-header {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .vet-treatments__header {
-        flex-direction: column;
-    }
-
-    .vet-treatments table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    .vet-treatments form {
-        gap: 14px;
-    }
+    flex-direction: column;
+  }
 }

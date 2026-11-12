@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth';
 import { getPets } from '@/features/pets';
 import { getUsers } from '@/features/users';
 import { createAppointment, getAppointments, updateAppointment } from '../api';
+import { DEFAULT_AMOUNT, getFreeSlots } from '../utils';
 import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
@@ -40,28 +41,12 @@ const STATUS = {
 
 const STATUS_OPTIONS = Object.entries(STATUS).map(([value, { label }]) => ({ value, label }));
 
-// Bloques de 30 minutos de 09:00 a 17:30
-const TIME_SLOTS = Array.from({ length: 18 }, (_, i) => {
-    const hours = String(9 + Math.floor(i / 2)).padStart(2, '0');
-    const minutes = i % 2 === 0 ? '00' : '30';
-    return `${hours}:${minutes}`;
-});
-
-// Importe base de una consulta pedida por el cliente.
-// En turnos de tratamientos lo define el veterinario (RN07).
-const DEFAULT_AMOUNT = 10000;
-
 const EMPTY_FORM = { petId: '', veterinarianId: '', date: '', time: '', reason: '' };
 const EMPTY_FILTERS = { status: '', from: '', to: '' };
 
 const formatDate = (iso) => {
     const [y, m, d] = iso.split('-');
     return `${d}/${m}/${y}`;
-};
-
-const currentTime = () => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 };
 
 function ClientAppointmentsPage() {
@@ -132,17 +117,12 @@ function ClientAppointmentsPage() {
     // RF11: horarios libres del veterinario elegido para la fecha elegida
     const freeSlots = useMemo(() => {
         if (!form.veterinarianId || !form.date) return [];
-        const taken = appointments
-            .filter(
-                (a) =>
-                    a.veterinarianId === Number(form.veterinarianId) &&
-                    a.date === form.date &&
-                    a.status !== 'cancelled'
-            )
-            .map((a) => a.time);
-        const isToday = form.date === today;
-        const now = currentTime();
-        return TIME_SLOTS.filter((slot) => !taken.includes(slot) && (!isToday || slot > now));
+
+        return getFreeSlots(appointments, {
+            veterinarianId: form.veterinarianId,
+            date: form.date,
+            today,
+        });
     }, [appointments, form.veterinarianId, form.date, today]);
 
     const updateFilter = (field) => (e) =>

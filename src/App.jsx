@@ -4,14 +4,11 @@ import { AuthProvider, Login, ProtectedRoute, useAuth } from '@/features/auth';
 import { RoleHome, AdminHomePage } from '@/features/home';
 import { ClientPetsPage, VetPetsPage } from '@/features/pets';
 import { ClientAppointmentsPage, Scheduler, ReceptionistAppointmentsPage, AdminAppointmentsPage } from '@/features/appointments';
-import { ClientTreatmentsPage } from '@/features/treatments';
-import { ClientHistoryPage } from '@/features/history';
-import { ClientPaymentsPage, ReceptionistPaymentsPage } from '@/features/payments';
+import { AdminTreatmentsPage, ClientTreatmentsPage, TreatmentDetailPage, VetTreatmentsPage } from '@/features/treatments';
+import { AdminHistoryPage, ClientHistoryPage, VetHistoryPage } from '@/features/history';
+import { AdminPaymentsPage, ClientPaymentsPage, ReceptionistPaymentsPage } from '@/features/payments';
 import { ProfilePage } from '@/features/profile';
 import { AdminUsersPage, ReceptionistClientsPage } from '@/features/users';
-import { AdminTreatmentsPage, VetTreatmentsPage } from '@/features/treatments';
-import { AdminHistoryPage, VetHistoryPage } from '@/features/history';
-import { AdminPaymentsPage } from '@/features/payments';
 
 function AppointmentsRoute() {
   const { user } = useAuth();
@@ -127,6 +124,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['client', 'admin', 'veterinarian']}>
                   <TreatmentsRoute />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/treatments/:treatmentId"
+              element={
+                <ProtectedRoute allowedRoles={['client', 'admin', 'veterinarian']}>
+                  <TreatmentDetailPage />
                 </ProtectedRoute>
               }
             />

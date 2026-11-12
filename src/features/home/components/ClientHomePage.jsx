@@ -231,6 +231,15 @@ function ClientHomePage() {
                                         max={t.totalSessions}
                                         label={`${t.completedSessions}/${t.totalSessions} sesiones`}
                                     />
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() =>
+                                            navigate(`/treatments/${t.id}`)
+                                        }
+                                    >
+                                        Ver detalle
+                                    </Button>
                                 </Card>
                             ))}
                         </div>

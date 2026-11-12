@@ -56,12 +56,14 @@ export async function updateAppointment(id, changes) {
     if (!API_READY) {
         const appointments = readMock();
         const updated = appointments.map((appointment) =>
-            appointment.id === id
-                ? { ...appointment, ...changes, id }
+            Number(appointment.id) === Number(id)
+                ? { ...appointment, ...changes, id: appointment.id }
                 : appointment
         );
         writeMock(updated);
-        return updated.find((appointment) => appointment.id === id);
+        return updated.find(
+            (appointment) => Number(appointment.id) === Number(id)
+        );
     }
 
     const response = await fetch(`/appointments/${id}`, {

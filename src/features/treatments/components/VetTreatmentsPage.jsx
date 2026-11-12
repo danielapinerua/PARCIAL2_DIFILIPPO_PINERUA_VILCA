@@ -1,13 +1,18 @@
-
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
-
-import treatmentsMock from '../mocks/treatments.json';
-import appointmentsMock from '@/features/appointments/mocks/appointments.json';
-import petsMock from '@/features/pets/mocks/pets.json';
-import usersMock from '@/features/users/mocks/users.json';
-
+import { getAppointments } from '@/features/appointments';
+import { getPets } from '@/features/pets';
+import { getTreatments } from '../api';
+import {
+    TREATMENT_STATUS,
+    TREATMENT_STATUS_ORDER,
+    formatDate,
+    getDisplayName,
+    getRoleMeta,
+    getTreatmentSidebar,
+    getTreatmentStartDate,
+} from '../constants';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
 import Button from '@/components/Button/Button';
@@ -15,440 +20,172 @@ import Card from '@/components/Card/Card';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import ProgressBar from '@/components/ProgressBar/ProgressBar';
-import Table from '@/components/Table/Table';
-
+import Spinner from '@/components/Spinner/Spinner';
+import CreateTreatmentModal from './CreateTreatmentModal';
 import './VetTreatmentsPage.css';
-
-const SIDEBAR_ITEMS = [
-    { href: '/home', label: 'Inicio' },
-    { href: '/schedule', label: 'Mi agenda' },
-    { href: '/treatments', label: 'Tratamientos', isActive: true },
-    { href: '/pets', label: 'Mascotas' },
-    { href: '/history', label: 'Historial clínico' },
-    { href: '/profile', label: 'Mi perfil' },
-];
-
-const TREATMENT_STATUS = {
-    active: { label: 'Activo', color: 'blue' },
-    completed: { label: 'Finalizado', color: 'green' },
-    cancelled: { label: 'Cancelado', color: 'red' },
-};
-
-const APPOINTMENT_STATUS = {
-    pending: { label: 'Pendiente', color: 'yellow' },
-    confirmed: { label: 'Confirmado', color: 'blue' },
-    completed: { label: 'Realizado', color: 'green' },
-    cancelled: { label: 'Cancelado', color: 'red' },
-};
-
-const STATUS_ORDER = { active: 0, completed: 1, cancelled: 2 };
-
-// Convierte una cantidad de días en una fecha.
-const dateFromOffset = (offset) => {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-};
-
-const formatDate = (date) => {
-    const [year, month, day] = date.split('-');
-    return `${day}/${month}/${year}`;
-};
-
-const sessionColumns = [
-    {
-        key: 'date',
-        header: 'Fecha',
-        render: (row) => formatDate(row.date),
-    },
-    { key: 'time', header: 'Hora' },
-    { key: 'reason', header: 'Motivo' },
-    {
-        key: 'status',
-        header: 'Estado',
-        render: (row) => (
-            <Badge color={APPOINTMENT_STATUS[row.status]?.color || 'gray'}>
-                {APPOINTMENT_STATUS[row.status]?.label || row.status}
-            </Badge>
-        ),
-    },
-    { key: 'amount', header: 'Importe', render: (row) => `$${row.amount}` },
-    { key: 'notes', header: 'Notas', render: (row) => row.notes || '—' },
-];
 
 function VetTreatmentsPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-    const [expandedIds, setExpandedIds] = useState([]);
-    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [treatments, setTreatments] = useState([]);
+    const [appointments, setAppointments] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+    const [createOpen, setCreateOpen] = useState(false);
 
-    const [newTreatment, setNewTreatment] = useState({
-        petId: '',
-        name: '',
-        notes: '',
-        totalSessions: 1,
-        startDate: '',
-    });
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
 
-    const [editingTreatmentId, setEditingTreatmentId] = useState(null);
-    const [editedNotes, setEditedNotes] = useState('');
+            const [allTreatments, allAppointments, allPets] =
+                await Promise.all([
+                    getTreatments(),
+                    getAppointments(),
+                    getPets(),
+                ]);
 
-    const [schedulingTreatmentId, setSchedulingTreatmentId] = useState(null);
+            setTreatments(allTreatments);
+            setAppointments(allAppointments);
+            setPets(allPets);
+            setLoadError('');
+        } catch (err) {
+            setLoadError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    const [newSession, setNewSession] = useState({
-        date: '',
-        time: '',
-        reason: '',
-        amount: '',
-    });
-
-    // Copias de los mocks para trabajar con los datos en el componente.
-    const [treatments, setTreatments] = useState(() =>
-        treatmentsMock.map((t) => ({
-            ...t,
-            startDate: dateFromOffset(t.startDateOffsetDays),
-        }))
-    );
-    const [appointments, setAppointments] = useState(() =>
-        appointmentsMock.map((a) => ({
-            ...a,
-            date: dateFromOffset(a.dateOffsetDays),
-        }))
-    );
-
-    // Mascotas y usuarios disponibles en los mocks.
-    const pets = petsMock;
-    const vets = usersMock.filter((u) => u.role === 'veterinarian');
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const getPetName = (petId) =>
-        pets.find((pet) => pet.id === petId)?.name ?? 'Sin datos';
-
-    const getVetName = (vetId) => {
-        const vet = vets.find((v) => v.id === vetId);
-        return vet ? `Dr. ${vet.firstName} ${vet.lastName}` : 'Sin asignar';
-    };
+        pets.find((pet) => Number(pet.id) === Number(petId))?.name ??
+        'Sin datos';
 
     // Tratamientos asignados al veterinario que inició sesión.
-    const myTreatments = useMemo(() => {
-        return treatments
-            .filter((t) => t.veterinarianId === user.id)
-            .map((t) => {
-                const sessions = appointments
-                    .filter((a) => a.treatmentId === t.id)
-                    .sort(
-                        (a, b) =>
-                            a.date.localeCompare(b.date) ||
-                            a.time.localeCompare(b.time)
-                    );
+    const myTreatments = useMemo(
+        () =>
+            treatments
+                .filter(
+                    (treatment) =>
+                        Number(treatment.veterinarianId) === Number(user.id)
+                )
+                .map((treatment) => {
+                    const sessions = appointments
+                        .filter(
+                            (appointment) =>
+                                Number(appointment.treatmentId) ===
+                                Number(treatment.id)
+                        )
+                        .sort(
+                            (a, b) =>
+                                a.date.localeCompare(b.date) ||
+                                a.time.localeCompare(b.time)
+                        );
 
-                return {
-                    ...t,
-                    sessions,
-                    completedSessions: sessions.filter(
-                        (s) => s.status === 'completed'
-                    ).length,
-                    scheduledSessions: sessions.filter(
-                        (s) => s.status !== 'cancelled'
-                    ).length,
-                };
-            })
-            .sort(
-                (a, b) =>
-                    STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
-                    b.startDate.localeCompare(a.startDate)
-            );
-    }, [treatments, appointments, user.id]);
-
-    const toggleExpanded = (id) => {
-        setExpandedIds((current) =>
-            current.includes(id)
-                ? current.filter((x) => x !== id)
-                : [...current, id]
-        );
-    };
+                    return {
+                        ...treatment,
+                        sessions,
+                        completedSessions: sessions.filter(
+                            (session) => session.status === 'completed'
+                        ).length,
+                        scheduledSessions: sessions.filter(
+                            (session) =>
+                                session.status === 'pending' ||
+                                session.status === 'confirmed'
+                        ).length,
+                    };
+                })
+                .sort(
+                    (a, b) =>
+                        (TREATMENT_STATUS_ORDER[a.status] ?? 9) -
+                            (TREATMENT_STATUS_ORDER[b.status] ?? 9) ||
+                        String(getTreatmentStartDate(b)).localeCompare(
+                            String(getTreatmentStartDate(a))
+                        )
+                ),
+        [appointments, treatments, user.id]
+    );
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    const handleCreateTreatment = (e) => {
-        e.preventDefault();
-
-        if (
-            !newTreatment.petId ||
-            !newTreatment.name.trim() ||
-            !newTreatment.startDate ||
-            newTreatment.totalSessions < 1
-        ) {
-            return;
-        }
-
-        const selectedDate = new Date(`${newTreatment.startDate}T00:00:00`);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const startDateOffsetDays = Math.round(
-            (selectedDate - today) / (1000 * 60 * 60 * 24)
-        );
-
-        const newId = Math.max(0, ...treatments.map((t) => t.id)) + 1;
-
-        const treatmentToAdd = {
-            id: newId,
-            petId: Number(newTreatment.petId),
-            veterinarianId: user.id,
-            name: newTreatment.name.trim(),
-            notes: newTreatment.notes.trim(),
-            totalSessions: Number(newTreatment.totalSessions),
-            startDateOffsetDays,
-            startDate: newTreatment.startDate,
-            status: 'active',
-        };
-
-        setTreatments((current) => [...current, treatmentToAdd]);
-
-        setNewTreatment({
-            petId: '',
-            name: '',
-            notes: '',
-            totalSessions: 1,
-            startDate: '',
-        });
-
-        setShowCreateForm(false);
-    };
-
-    const handleSaveNotes = (treatmentId) => {
-        setTreatments((current) =>
-            current.map((treatment) =>
-                treatment.id === treatmentId
-                    ? { ...treatment, notes: editedNotes.trim() }
-                    : treatment
-            )
-        );
-
-        setEditingTreatmentId(null);
-        setEditedNotes('');
-    };
-
-    const handleScheduleSession = (e) => {
-        e.preventDefault();
-
-        if (
-            !schedulingTreatmentId ||
-            !newSession.date ||
-            !newSession.time ||
-            !newSession.reason.trim() ||
-            newSession.amount === '' ||
-            Number(newSession.amount) < 0
-        ) {
-            return;
-        }
-
-        const treatment = treatments.find(
-            (t) => t.id === schedulingTreatmentId
-        );
-
-        if (!treatment) return;
-
-        const selectedDate = new Date(`${newSession.date}T00:00:00`);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const dateOffsetDays = Math.round(
-            (selectedDate - today) / (1000 * 60 * 60 * 24)
-        );
-
-        const newId = Math.max(0, ...appointments.map((a) => a.id)) + 1;
-
-        const appointmentToAdd = {
-            id: newId,
-            petId: treatment.petId,
-            veterinarianId: user.id,
-            treatmentId: treatment.id,
-            dateOffsetDays,
-            date: newSession.date,
-            time: newSession.time,
-            reason: newSession.reason.trim(),
-            status: 'pending',
-            amount: Number(newSession.amount),
-            notes: '',
-        };
-
-        setAppointments((current) => [...current, appointmentToAdd]);
-
-        setNewSession({
-            date: '',
-            time: '',
-            reason: '',
-            amount: '',
-        });
-
-        setSchedulingTreatmentId(null);
-    };
-
-
-    const handleCancelTreatment = (treatmentId) => {
-        const confirmed = window.confirm(
-            '¿Estás seguro de que querés cancelar este tratamiento?'
-        );
-
-        if (!confirmed) return;
-
-        setTreatments((current) =>
-            current.map((treatment) =>
-                treatment.id === treatmentId
-                    ? { ...treatment, status: 'cancelled' }
-                    : treatment
-            )
-        );
-
-        setAppointments((current) =>
-            current.map((appointment) =>
-                appointment.treatmentId === treatmentId &&
-                    ['pending', 'confirmed'].includes(appointment.status)
-                    ? { ...appointment, status: 'cancelled' }
-                    : appointment
-            )
-        );
-    };
-
+    const roleMeta = getRoleMeta(user.role);
+    const sidebarItems = getTreatmentSidebar(user.role);
+    const displayName = getDisplayName(user);
 
     return (
         <AppLayout
-            sidebarItems={SIDEBAR_ITEMS}
-            userName={`${user.firstName} ${user.lastName}`}
-            roleLabel="Veterinario"
-            roleColor="blue"
+            sidebarItems={sidebarItems}
+            userName={displayName}
+            roleLabel={roleMeta.label}
+            roleColor={roleMeta.color}
             onLogout={handleLogout}
         >
             <div className="vet-treatments">
-                <div className="vet-treatments__page-header">
-                    <PageHeader
-                        title="Tratamientos"
-                        subtitle="Consultá y gestioná los tratamientos de tus pacientes."
+                <PageHeader
+                    title="Tratamientos"
+                    subtitle="Consultá y gestioná los tratamientos de tus pacientes."
+                    actions={
+                        <Button onClick={() => setCreateOpen(true)}>
+                            Nuevo tratamiento
+                        </Button>
+                    }
+                />
+
+                {loading ? (
+                    <div className="vet-treatments__center">
+                        <Spinner label="Cargando tratamientos…" />
+                    </div>
+                ) : loadError ? (
+                    <EmptyState
+                        title="No se pudieron cargar los tratamientos"
+                        message={loadError}
+                        action={
+                            <Button onClick={loadData}>Reintentar</Button>
+                        }
                     />
-
-                    <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-                        Nuevo tratamiento
-                    </Button>
-                </div>
-
-                {showCreateForm && (
-                    <Card>
-                        <form onSubmit={handleCreateTreatment}>
-                            <h2>Nuevo tratamiento</h2>
-
-                            <div>
-                                <label htmlFor="petId">Mascota</label>
-                                <select
-                                    id="petId"
-                                    value={newTreatment.petId}
-                                    onChange={(e) =>
-                                        setNewTreatment({
-                                            ...newTreatment,
-                                            petId: e.target.value,
-                                        })
-                                    }
-                                    required>
-                                    <option value="">Seleccioná una mascota</option>
-                                    {pets.filter((pet) => pet.active)
-                                        .map((pet) => (
-                                            <option key={pet.id} value={pet.id}>
-                                                {pet.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label htmlFor="treatmentName">Nombre del tratamiento</label>
-                                <input
-                                    id="treatmentName" type="text" value={newTreatment.name}
-                                    onChange={(e) =>
-                                        setNewTreatment({
-                                            ...newTreatment, name: e.target.value,
-                                        })
-                                    } placeholder="Ej. Tratamiento dermatológico" required />
-                            </div>
-                            <div>
-                                <label htmlFor="treatmentNotes">Observaciones</label>
-                                <textarea
-                                    id="treatmentNotes"
-                                    value={newTreatment.notes}
-                                    onChange={(e) => setNewTreatment({
-                                        ...newTreatment, notes: e.target.value,
-                                    })
-                                    }
-                                    placeholder="Indicaciones y observaciones del tratamiento"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="totalSessions">Cantidad de sesiones</label>
-                                <input
-                                    id="totalSessions" type="number" min="1" value={newTreatment.totalSessions}
-                                    onChange={(e) => setNewTreatment({
-                                        ...newTreatment, totalSessions: e.target.value,
-
-                                    })
-                                    }
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="startDate">Fecha de inicio</label>
-                                <input
-                                    id="startDate"
-                                    type="date" value={newTreatment.startDate}
-                                    onChange={(e) => setNewTreatment({
-                                        ...newTreatment, startDate: e.target.value,
-
-                                    })
-                                    }
-                                    required />
-                            </div>
-
-                            <Button type="submit">Guardar tratamiento</Button>
-
-                            <Button
-                                type="button" variant="ghost" onClick={() => setShowCreateForm(false)}
-                            >
-                                Cancelar
-                            </Button>
-                        </form>
-                    </Card>
-                )}
-                {myTreatments.length === 0 ? (
+                ) : myTreatments.length === 0 ? (
                     <EmptyState
                         title="No tenés tratamientos asignados"
                         message="Cuando tengas tratamientos asignados, van a aparecer acá."
+                        action={
+                            <Button onClick={() => setCreateOpen(true)}>
+                                Nuevo tratamiento
+                            </Button>
+                        }
                     />
                 ) : (
                     <div className="vet-treatments__list">
-                        {myTreatments.map((t) => {
-                            const isExpanded = expandedIds.includes(t.id);
-                            const status = TREATMENT_STATUS[t.status];
+                        {myTreatments.map((treatment) => {
+                            const status =
+                                TREATMENT_STATUS[treatment.status] ?? {
+                                    label: treatment.status,
+                                    color: 'gray',
+                                };
 
                             return (
-                                <Card key={t.id}>
-                                    <div className="vet-treatments__header">
+                                <Card key={treatment.id}>
+                                    <div className="vet-treatments__card-header">
                                         <div>
-                                            <h2>{t.name}</h2>
-                                            <p>
-                                                Mascota: {getPetName(t.petId)}
+                                            <h2 className="vet-treatments__name">
+                                                {treatment.name}
+                                            </h2>
+                                            <p className="vet-treatments__meta">
+                                                Mascota:{' '}
+                                                {getPetName(treatment.petId)}
                                                 {' · '}
-                                                {getVetName(t.veterinarianId)}
-                                                {' · '}
-                                                Inicio: {formatDate(t.startDate)}
+                                                Inicio:{' '}
+                                                {formatDate(
+                                                    getTreatmentStartDate(
+                                                        treatment
+                                                    )
+                                                )}
                                             </p>
                                         </div>
 
@@ -457,214 +194,55 @@ function VetTreatmentsPage() {
                                         </Badge>
                                     </div>
 
-                                    {editingTreatmentId === t.id ? (
-                                        <div>
-                                            <label htmlFor={`notes-${t.id}`}>Observaciones</label>
-
-                                            <textarea
-                                                id={`notes-${t.id}`}
-                                                value={editedNotes}
-                                                onChange={(e) => setEditedNotes(e.target.value)}
-                                                rows={3}
-                                            />
-
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleSaveNotes(t.id)}
-                                            >
-                                                Guardar cambios
-                                            </Button>
-
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => {
-                                                    setEditingTreatmentId(null);
-                                                    setEditedNotes('');
-                                                }}
-                                            >
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <p>{t.notes || 'Sin observaciones.'}</p>
-
-                                            {t.status === 'active' && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        setEditingTreatmentId(t.id);
-                                                        setEditedNotes(t.notes || '');
-                                                    }}
-                                                >
-                                                    Editar observaciones
-                                                </Button>
-                                            )}
-                                        </div>
+                                    {treatment.notes && (
+                                        <p className="vet-treatments__notes">
+                                            {treatment.notes}
+                                        </p>
                                     )}
 
                                     <ProgressBar
-                                        value={t.completedSessions}
-                                        max={t.totalSessions}
-                                        label={`${t.completedSessions}/${t.totalSessions} sesiones realizadas`}
+                                        value={treatment.completedSessions}
+                                        max={treatment.totalSessions}
+                                        label={`${treatment.completedSessions}/${treatment.totalSessions} sesiones realizadas`}
                                     />
 
-                                    <p>
-                                        {t.scheduledSessions} de {t.totalSessions} sesiones agendadas
-                                    </p>
+                                    <div className="vet-treatments__footer">
+                                        <span className="vet-treatments__meta">
+                                            {treatment.scheduledSessions}{' '}
+                                            {treatment.scheduledSessions === 1
+                                                ? 'agendada'
+                                                : 'agendadas'}{' '}
+                                            · {treatment.totalSessions} en total
+                                        </span>
 
-                                    <div>
-                                        {t.sessions.length > 0 && (
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => toggleExpanded(t.id)}
-                                            >
-                                                {isExpanded ? 'Ocultar sesiones' : 'Ver sesiones'}
-                                            </Button>
-                                        )}
-
-                                        {t.status === 'active' && (
-                                            <>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => setSchedulingTreatmentId(t.id)}
-                                                >
-                                                    Agendar sesión
-                                                </Button>
-
-                                                <Button
-                                                    size="sm"
-                                                    variant="danger"
-                                                    onClick={() => handleCancelTreatment(t.id)}
-                                                >
-                                                    Cancelar tratamiento
-                                                </Button>
-                                            </>
-                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="secondary"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/treatments/${treatment.id}`
+                                                )
+                                            }
+                                        >
+                                            Ver detalle
+                                        </Button>
                                     </div>
-
-                                    {isExpanded && (
-                                        <div>
-                                            <Table
-                                                columns={sessionColumns}
-                                                data={t.sessions}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {schedulingTreatmentId === t.id && (
-                                        <Card>
-                                            <form onSubmit={handleScheduleSession}>
-                                                <h3>Agendar sesión: {t.name}</h3>
-
-                                                <div>
-                                                    <label htmlFor={`session-date-${t.id}`}>
-                                                        Fecha
-                                                    </label>
-                                                    <input
-                                                        id={`session-date-${t.id}`}
-                                                        type="date"
-                                                        value={newSession.date}
-                                                        min={new Date().toLocaleDateString('en-CA')}
-                                                        onChange={(e) =>
-                                                            setNewSession({
-                                                                ...newSession,
-                                                                date: e.target.value,
-                                                            })
-                                                        }
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor={`session-time-${t.id}`}>
-                                                        Hora
-                                                    </label>
-                                                    <input
-                                                        id={`session-time-${t.id}`}
-                                                        type="time"
-                                                        value={newSession.time}
-                                                        onChange={(e) =>
-                                                            setNewSession({
-                                                                ...newSession,
-                                                                time: e.target.value,
-                                                            })
-                                                        }
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor={`session-reason-${t.id}`}>
-                                                        Motivo
-                                                    </label>
-                                                    <input
-                                                        id={`session-reason-${t.id}`}
-                                                        type="text"
-                                                        value={newSession.reason}
-                                                        onChange={(e) =>
-                                                            setNewSession({
-                                                                ...newSession,
-                                                                reason: e.target.value,
-                                                            })
-                                                        }
-                                                        placeholder="Ej. Sesión 1 de rehabilitación"
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label htmlFor={`session-amount-${t.id}`}>
-                                                        Importe ($)
-                                                    </label>
-                                                    <input
-                                                        id={`session-amount-${t.id}`}
-                                                        type="number"
-                                                        min="0"
-                                                        step="0.01"
-                                                        value={newSession.amount}
-                                                        onChange={(e) =>
-                                                            setNewSession({
-                                                                ...newSession,
-                                                                amount: e.target.value,
-                                                            })
-                                                        }
-                                                        placeholder="Ej. 15000"
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <Button type="submit">
-                                                    Guardar sesión
-                                                </Button>
-
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        setSchedulingTreatmentId(null);
-                                                        setNewSession({
-                                                            date: '',
-                                                            time: '',
-                                                            reason: '',
-                                                            amount: '',
-                                                        });
-                                                    }}
-                                                >
-                                                    Cancelar
-                                                </Button>
-                                            </form>
-                                        </Card>
-                                    )}
                                 </Card>
                             );
                         })}
                     </div>
                 )}
             </div>
+
+            {createOpen && (
+                <CreateTreatmentModal
+                    isOpen
+                    pets={pets}
+                    veterinarianId={user.id}
+                    onClose={() => setCreateOpen(false)}
+                    onCreated={loadData}
+                />
+            )}
         </AppLayout>
     );
 }

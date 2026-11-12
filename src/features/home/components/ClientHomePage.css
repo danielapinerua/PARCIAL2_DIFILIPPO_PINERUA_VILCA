@@ -31,6 +31,10 @@
     color: var(--color-text-muted);
 }
 
+.client-home__treatments .button {
+    margin-top: var(--space-3);
+}
+
 @media (max-width: 480px) {
     .client-home__debt {
         max-width: none;

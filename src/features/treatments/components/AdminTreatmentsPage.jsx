@@ -4,7 +4,14 @@ import { useAuth } from '@/features/auth';
 import { getPets } from '@/features/pets';
 import { getUsers } from '@/features/users';
 import { getTreatments } from '../api';
-
+import {
+    TREATMENT_STATUS,
+    formatDate,
+    getDisplayName,
+    getRoleMeta,
+    getTreatmentSidebar,
+    getTreatmentStartDate,
+} from '../constants';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
 import Button from '@/components/Button/Button';
@@ -53,105 +60,104 @@ function AdminTreatmentsPage() {
         navigate('/login');
     };
 
-    const getPetName = (petId) => {
-        const pet = pets.find((item) => item.id === petId);
-        return pet ? pet.name : 'Mascota no encontrada';
-    };
+    const getPetName = (petId) =>
+        pets.find((item) => Number(item.id) === Number(petId))?.name ??
+        'Mascota no encontrada';
 
     const getOwnerName = (petId) => {
-        const pet = pets.find((item) => item.id === petId);
+        const pet = pets.find((item) => Number(item.id) === Number(petId));
         if (!pet) return 'No disponible';
 
-        const owner = users.find((item) => item.id === pet.ownerId);
-
+        const owner = users.find(
+            (item) => Number(item.id) === Number(pet.ownerId)
+        );
         return owner
             ? `${owner.firstName} ${owner.lastName}`
             : 'No disponible';
     };
 
     const getVetName = (veterinarianId) => {
-        const vet = users.find((item) => item.id === veterinarianId);
-
+        const vet = users.find(
+            (item) => Number(item.id) === Number(veterinarianId)
+        );
         return vet
             ? `${vet.firstName} ${vet.lastName}`
             : 'No asignado';
     };
-    
-    const STATUS = {
-    active: { label: 'Activo', color: 'green' },
-    completed: { label: 'Finalizado', color: 'blue' },
-    cancelled: { label: 'Cancelado', color: 'red' },
-};
 
-const columns = [
-    {
-        key: 'pet',
-        header: 'Mascota',
-        render: (row) => getPetName(row.petId),
-    },
-    {
-        key: 'owner',
-        header: 'Propietario',
-        render: (row) => getOwnerName(row.petId),
-    },
-    {
-        key: 'veterinarian',
-        header: 'Veterinario',
-        render: (row) => getVetName(row.veterinarianId),
-    },
-    {
-        key: 'name',
-        header: 'Tratamiento',
-    },
-    {
-        key: 'notes',
-        header: 'Observaciones',
-    },
-    {
-        key: 'totalSessions',
-        header: 'Sesiones',
-    },
-    {
-        key: 'startDateOffsetDays',
-        header: 'Inicio',
-        render: (row) => {
-            const date = new Date();
-            date.setDate(date.getDate() + row.startDateOffsetDays);
-
-            return date.toLocaleDateString('es-AR');
+    const columns = [
+        {
+            key: 'pet',
+            header: 'Mascota',
+            render: (row) => getPetName(row.petId),
         },
-    },
-    {
-        key: 'status',
-        header: 'Estado',
-        render: (row) => {
-            const status = STATUS[row.status];
-
-            return (
-                <Badge color={status?.color || 'gray'}>
-                    {status?.label || row.status}
-                </Badge>
-            );
+        {
+            key: 'owner',
+            header: 'Propietario',
+            render: (row) => getOwnerName(row.petId),
         },
-    },
-];
+        {
+            key: 'veterinarian',
+            header: 'Veterinario',
+            render: (row) => getVetName(row.veterinarianId),
+        },
+        {
+            key: 'name',
+            header: 'Tratamiento',
+        },
+        {
+            key: 'notes',
+            header: 'Observaciones',
+            render: (row) => row.notes || '—',
+        },
+        {
+            key: 'totalSessions',
+            header: 'Sesiones',
+        },
+        {
+            key: 'startDate',
+            header: 'Inicio',
+            render: (row) => formatDate(getTreatmentStartDate(row)),
+        },
+        {
+            key: 'status',
+            header: 'Estado',
+            render: (row) => {
+                const status = TREATMENT_STATUS[row.status] ?? {
+                    label: row.status,
+                    color: 'gray',
+                };
 
-    const SIDEBAR_ITEMS = [
-        { href: '/dashboard', label: 'Panel' },
-        { href: '/users', label: 'Usuarios' },
-        { href: '/appointments', label: 'Turnos' },
-        { href: '/treatments', label: 'Tratamientos', isActive: true },
-        { href: '/history', label: 'Historial clínico' },
-        { href: '/payments', label: 'Pagos y balance' },
-        { href: '/profile', label: 'Mi perfil' },
+                return (
+                    <Badge color={status.color}>{status.label}</Badge>
+                );
+            },
+        },
+        {
+            key: 'actions',
+            header: '',
+            render: (row) => (
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate(`/treatments/${row.id}`)}
+                >
+                    Ver detalle
+                </Button>
+            ),
+        },
     ];
+
+    const roleMeta = getRoleMeta(user.role);
+    const sidebarItems = getTreatmentSidebar(user.role);
+    const displayName = getDisplayName(user);
 
     return (
         <AppLayout
-            sidebarItems={SIDEBAR_ITEMS}
-            userName={`${user.firstName} ${user.lastName}`}
-            roleLabel="Administrador"
-            roleColor="blue"
+            sidebarItems={sidebarItems}
+            userName={displayName}
+            roleLabel={roleMeta.label}
+            roleColor={roleMeta.color}
             onLogout={handleLogout}
         >
             <div className="admin-treatments">
