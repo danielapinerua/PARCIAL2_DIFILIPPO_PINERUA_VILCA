@@ -1,5 +1,11 @@
 .admin-users {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--space-6);
+}
+
+.admin-users__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
 }

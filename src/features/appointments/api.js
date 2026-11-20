@@ -80,9 +80,14 @@ export async function updateAppointment(id, changes) {
 export async function createAppointment(appointment) {
     if (!API_READY) {
         const appointments = await getAppointments();
-        const nextId = appointments.reduce((max, a) => Math.max(max, a.id), 0) + 1;
+        const nextId =
+            appointments.reduce(
+                (max, item) => Math.max(max, Number(item.id) || 0),
+                0
+            ) + 1;
         const created = { ...appointment, id: nextId };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([...appointments, created]));
+
+        writeMock([...appointments, created]);
         return created;
     }
 

@@ -144,7 +144,7 @@ Tras el login, el admin es redirigido a `/dashboard` y el resto a `/home`.
 El acceso se controla en dos niveles:
 
 1. **Autenticación**: `ProtectedRoute` (`src/features/auth/ProtectedRoute.jsx`) verifica que exista sesión; si no, redirige a `/login`.
-2. **Autorización por rol**: `ProtectedRoute` recibe `allowedRoles`; si el rol del usuario no está incluido, redirige a `/` (que a su vez redirige a `/login`).
+2. **Autorización por rol**: `ProtectedRoute` recibe `allowedRoles`; si el rol del usuario no está incluido, redirige a `/home`.
 
 Además, varias rutas usan un **componente de despacho por rol** definido en `App.jsx` (`AppointmentsRoute`, `PetsRoute`, `TreatmentsRoute`, `HistoryRoute`, `PaymentsRoute`) que renderiza la página correspondiente según `user.role`.
 
@@ -154,7 +154,7 @@ Además, varias rutas usan un **componente de despacho por rol** definido en `Ap
 |---|---|---|
 | `/` | Redirige a `/login` | pública |
 | `/login` | `Login` | pública |
-| `/home` | `RoleHome` (despacha por rol) | client, veterinarian, receptionist |
+| `/home` | `RoleHome` (despacha por rol) | client, veterinarian, receptionist, admin |
 | `/dashboard` | `AdminHomePage` | admin |
 | `/schedule` | `Scheduler` (FullCalendar) | veterinarian, receptionist |
 | `/pets` | `ClientPetsPage` / `VetPetsPage` | client, veterinarian |
@@ -225,7 +225,7 @@ features/<feature>/
 └── components/         # Páginas y componentes del feature (+ .css colocalizado)
 ```
 
-**Regla clave:** los componentes nunca acceden a `localStorage` ni al JSON directamente (con una excepción documentada en [deuda técnica](#limitaciones-conocidas-y-deuda-técnica)); siempre consumen el `api.js` de su feature, que decide el modo de datos.
+**Regla clave:** los componentes nunca acceden a `localStorage` ni al JSON directamente; siempre consumen el `api.js` de su feature, que decide el modo de datos.
 
 ---
 
@@ -237,7 +237,7 @@ Cada feature expone funciones async con la misma forma: primero evalúan `VITE_A
 
 | Feature | Clave de `localStorage` | Endpoints REST esperados (modo API) |
 |---|---|---|
-| `users` | `patasana_users` | `GET /users`, `PATCH /users/:id`, `POST /users/:id/password` |
+| `users` | `patasana_users` | `GET/POST /users`, `PATCH /users/:id`, `POST /users/:id/password` |
 | `auth` | — (login lee `users`) | `POST /auth/login` |
 | `pets` | `patasana_pets` | `GET/POST /pets`, `PATCH/DELETE /pets/:id` |
 | `appointments` | `patasana_appointments` | `GET/POST /appointments`, `PATCH /appointments/:id` |
@@ -250,7 +250,7 @@ Los fixtures guardan **offsets en días** (`dateOffsetDays`, `startDateOffsetDay
 
 ### Persistencia en modo mock
 
-`pets`, `appointments`, `treatments` y `users` **persisten** los cambios en `localStorage`, por lo que las altas/modificaciones sobreviven a recargas. Los pagos, en cambio, se leen de `mocks/payments.json` (solo lectura). Para volver al estado original del fixture: borrar las claves `patasana_*` en DevTools → Application → Local Storage.
+`pets`, `appointments`, `treatments` y `users` **persisten** los cambios en `localStorage`, por lo que las altas/modificaciones sobreviven a recargas. Los usuarios se pueden crear, editar y activar/desactivar desde `/users`; la agenda de recepción también persiste los turnos que crea. Los pagos, en cambio, se leen de `mocks/payments.json` (solo lectura). Para volver al estado original del fixture: borrar las claves `patasana_*` en DevTools → Application → Local Storage.
 
 ---
 
@@ -273,6 +273,7 @@ Entidades principales (campos de los fixtures):
 ### Lógica de dominio destacada
 
 - **Slots de turnos** (`features/appointments/utils.js`): bloques de 30 min de 09:00 a 17:30 (`TIME_SLOTS`); `getFreeSlots()` excluye los turnos del veterinario (salvo cancelados) y, si la fecha es hoy, los horarios ya pasados. El importe base de una consulta del cliente es `DEFAULT_AMOUNT` ($10.000).
+- **Agenda de recepción** (`Scheduler` + `NewAppointmentModal`): recepción puede crear turnos confirmados desde la vista Día/Semana o con el botón “Nuevo turno”. Se validan fecha, horario libre, solapamientos y campos; el turno se persiste con `createAppointment` y queda visible en `/appointments` y en la agenda del veterinario.
 - **Estados y metadatos de rol** (`features/treatments/constants.js`): `TREATMENT_STATUS`, `APPOINTMENT_STATUS`, `ROLE_META` (etiqueta, color, prefijo `Dr. ` para veterinarios), `getDisplayName()`, `formatDate()` (DD/MM/YYYY), `formatCurrency()` (`$` con separador `es-AR`).
 
 ---
@@ -296,7 +297,7 @@ Características transversales:
 
 - El estado de sesión vive en `AuthContext` (React Context) **en memoria**: sobrevive a re-renders pero **no** a recargas de página (no se persiste en `localStorage` ni cookies).
 - `login()` (modo mock) valida credenciales contra `users.json`/`localStorage`, verifica `active` y devuelve el usuario **sin la contraseña**. En modo API hace `POST /auth/login` con el mismo contrato.
-- `ProtectedRoute` redirige a `/login` sin sesión y a `/` (→ `/login`) con rol no autorizado.
+- `ProtectedRoute` redirige a `/login` sin sesión y a `/home` con rol no autorizado.
 - `AuthProvider` y `ToastProvider` envuelven al `BrowserRouter` en `App.jsx`; el orden de providers es `AuthProvider → ToastProvider → BrowserRouter`.
 
 ---
@@ -353,15 +354,11 @@ Documentadas para su tratamiento futuro, no ocultas:
 1. **Sin tests**: no hay framework de testing ni cobertura configurada.
 2. **Sesión no persistente**: recargar la página cierra la sesión (el contexto vive en memoria).
 3. **Contraseñas en texto plano** en los mocks y en `localStorage` (solo aceptable en demo).
-4. **`VetHistoryPage` importa los JSON directamente** en lugar de pasar por las `api.js`, lo que rompe el patrón de la arquitectura y desincroniza si se edita `localStorage`.
-5. **Nombre de archivo con typo**: `features/history/components/AdminHIstoryPage.jsx` (la `I` mayúscula en `History`).
-6. **`payments` es de solo lectura** en modo mock; no existe `createPayment` aunque la UI de recepción/admin contempla balance.
-7. **Modo API sin backend**: `VITE_API_READY=true` espera endpoints REST que no están incluidos en este repo; las rutas van con path relativo (`/appointments`, etc.) y requieren reverse proxy o `server.proxy` en Vite.
-8. **Rol `admin` y `/home`**: `/home` no admite `admin` (va a `/dashboard`); un admin que navegue a `/home` cae en el redirect a `/` → `/login`.
-9. **Redirect por rol no autorizado** apunta a `/` en lugar de a una página "403" dedicada.
-10. **Sin paginación** en tablas ni virtualización; aceptable con el volumen de datos de la demo.
-11. **`AdminHIstoryPage` / duplicación** entre las páginas `*HistoryPage`: la lógica de filtrado está repetida entre los tres roles y podría extraerse a hooks compartidos (`useClinicalHistory`).
-12. **Fechas hidratadas en cada carga**: los offsets se resuelven una vez al importar el módulo; los IDs de turnos de sesiones creadas desde detalle de tratamiento no se cruzan automáticamente con `payments`.
+4. **`payments` es de solo lectura** en modo mock; no existe `createPayment` aunque la UI de recepción/admin contempla balance.
+5. **Modo API sin backend**: `VITE_API_READY=true` espera endpoints REST que no están incluidos en este repo; las rutas van con path relativo (`/appointments`, etc.) y requieren reverse proxy o `server.proxy` en Vite.
+6. **Sin paginación** en tablas ni virtualización; aceptable con el volumen de datos de la demo.
+7. **Duplicación entre las páginas `*HistoryPage`**: la lógica de filtrado está repetida entre los tres roles y podría extraerse a hooks compartidos (`useClinicalHistory`).
+8. **Fechas hidratadas en cada carga**: los offsets se resuelven una vez al importar el módulo; los IDs de turnos de sesiones creadas desde detalle de tratamiento no se cruzan automáticamente con `payments`.
 
 ## Hoja de ruta sugerida
 
@@ -370,7 +367,7 @@ Documentadas para su tratamiento futuro, no ocultas:
 - [ ] Backend REST propio o integración con API de la cátedra (`VITE_API_READY=true`)
 - [ ] Paginación y búsqueda server-side en tablas de admin
 - [ ] Página 403 y manejo unificado de errores de rutas
-- [ ] Corrección del typo `AdminHIstoryPage.jsx` y migración de `VetHistoryPage` al patrón `api.js`
+- [ ] Extracción de la lógica de historial a un hook compartido
 
 ---
 

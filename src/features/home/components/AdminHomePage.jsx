@@ -1,15 +1,18 @@
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
-
-import users from '@/features/users/mocks/users.json';
-import pets from '@/features/pets/mocks/pets.json';
-import appointments from '@/features/appointments/mocks/appointments.json';
-import treatments from '@/features/treatments/mocks/treatments.json';
-import payments from '@/features/payments/mocks/payments.json';
+import { getUsers } from '@/features/users';
+import { getPets } from '@/features/pets';
+import { getAppointments } from '@/features/appointments';
+import { getTreatments } from '@/features/treatments';
+import { getPayments } from '@/features/payments';
 
 import AppLayout from '@/components/AppLayout/AppLayout';
-import PageHeader from '@/components/PageHeader/PageHeader';
+import Button from '@/components/Button/Button';
 import Card from '@/components/Card/Card';
+import EmptyState from '@/components/EmptyState/EmptyState';
+import PageHeader from '@/components/PageHeader/PageHeader';
+import Spinner from '@/components/Spinner/Spinner';
 import StatCard from '@/components/StatCard/StatCard';
 
 import './AdminHomePage.css';
@@ -18,27 +21,83 @@ function AdminHomePage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-        // Estadísticas de usuarios
+    const [users, setUsers] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [appointments, setAppointments] = useState([]);
+    const [treatments, setTreatments] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+
+            const [
+                nextUsers,
+                nextPets,
+                nextAppointments,
+                nextTreatments,
+                nextPayments,
+            ] = await Promise.all([
+                getUsers(),
+                getPets(),
+                getAppointments(),
+                getTreatments(),
+                getPayments(),
+            ]);
+
+            setUsers(nextUsers);
+            setPets(nextPets);
+            setAppointments(nextAppointments);
+            setTreatments(nextTreatments);
+            setPayments(nextPayments);
+            setError('');
+        } catch (err) {
+            setError(err.message || 'No se pudo cargar el panel.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Estadísticas de usuarios
     const totalUsuarios = users.length;
-    const totalClientes = users.filter((u) => u.role === 'client').length;
+    const totalClientes = users.filter((item) => item.role === 'client').length;
 
     // Estadísticas de mascotas
     const totalMascotas = pets.length;
-    const mascotasActivas = pets.filter((p) => p.active).length;
+    const mascotasActivas = pets.filter((item) => item.active).length;
 
     // Estadísticas de turnos
     const totalTurnos = appointments.length;
-    const turnosPendientes = appointments.filter((a) => a.status === 'pending').length;
-    const turnosConfirmados = appointments.filter((a) => a.status === 'confirmed').length;
-    const turnosCompletados = appointments.filter((a) => a.status === 'completed').length;
-    const turnosCancelados = appointments.filter((a) => a.status === 'cancelled').length;
+    const turnosPendientes = appointments.filter(
+        (item) => item.status === 'pending'
+    ).length;
+    const turnosConfirmados = appointments.filter(
+        (item) => item.status === 'confirmed'
+    ).length;
+    const turnosCompletados = appointments.filter(
+        (item) => item.status === 'completed'
+    ).length;
+    const turnosCancelados = appointments.filter(
+        (item) => item.status === 'cancelled'
+    ).length;
 
     // Estadísticas de tratamientos
     const totalTratamientos = treatments.length;
-    const tratamientosActivos = treatments.filter((t) => t.status === 'active').length;
+    const tratamientosActivos = treatments.filter(
+        (item) => item.status === 'active'
+    ).length;
 
     // Ingresos registrados
-    const totalIngresos = payments.reduce((total, payment) => total + payment.amount, 0);
+    const totalIngresos = payments.reduce(
+        (total, payment) => total + payment.amount,
+        0
+    );
 
     const handleLogout = () => {
         logout();
@@ -62,58 +121,73 @@ function AdminHomePage() {
             onLogout={handleLogout}
         >
             <div className="admin-home">
-    <PageHeader
-        title={`Hola, ${user.firstName}`}
-        subtitle="Resumen general de PataSana"
-    />
+                <PageHeader
+                    title={`Hola, ${user.firstName}`}
+                    subtitle="Resumen general de PataSana"
+                />
 
-    <section className="admin-home__stats">
-        <StatCard
-            label="Usuarios registrados"
-            value={totalUsuarios}
-            icon="👥"
-            trend={`${totalClientes} clientes`}
-        />
+                {loading ? (
+                    <div className="admin-home__center">
+                        <Spinner label="Cargando panel…" />
+                    </div>
+                ) : error ? (
+                    <EmptyState
+                        title="No se pudo cargar el panel"
+                        message={error}
+                        action={<Button onClick={loadData}>Reintentar</Button>}
+                    />
+                ) : (
+                    <>
+                        <section className="admin-home__stats">
+                            <StatCard
+                                label="Usuarios registrados"
+                                value={totalUsuarios}
+                                icon="👥"
+                                trend={`${totalClientes} clientes`}
+                            />
 
-        <StatCard
-            label="Mascotas registradas"
-            value={totalMascotas}
-            icon="🐾"
-            trend={`${mascotasActivas} activas`}
-        />
+                            <StatCard
+                                label="Mascotas registradas"
+                                value={totalMascotas}
+                                icon="🐾"
+                                trend={`${mascotasActivas} activas`}
+                            />
 
-        <StatCard
-            label="Total de turnos"
-            value={totalTurnos}
-            icon="📅"
-            trend={`${turnosPendientes} pendientes`}
-        />
+                            <StatCard
+                                label="Total de turnos"
+                                value={totalTurnos}
+                                icon="📅"
+                                trend={`${turnosPendientes} pendientes`}
+                            />
 
-        <StatCard
-            label="Tratamientos"
-            value={totalTratamientos}
-            icon="🩺"
-            trend={`${tratamientosActivos} activos`}
-        />
+                            <StatCard
+                                label="Tratamientos"
+                                value={totalTratamientos}
+                                icon="🩺"
+                                trend={`${tratamientosActivos} activos`}
+                            />
 
-        <StatCard
-            label="Ingresos registrados"
-            value={`$${totalIngresos.toLocaleString('es-AR')}`}
-            icon="💰"
-            trend={`${payments.length} pagos registrados`}
-        />
-    </section>
-    <section className="admin-home__details">
-    <Card title="Estado de los turnos">
-        <div className="admin-home__appointment-stats">
-            <p>Pendientes: {turnosPendientes}</p>
-            <p>Confirmados: {turnosConfirmados}</p>
-            <p>Completados: {turnosCompletados}</p>
-            <p>Cancelados: {turnosCancelados}</p>
-        </div>
-    </Card>
-    </section>
-</div>
+                            <StatCard
+                                label="Ingresos registrados"
+                                value={`$${totalIngresos.toLocaleString('es-AR')}`}
+                                icon="💰"
+                                trend={`${payments.length} pagos registrados`}
+                            />
+                        </section>
+
+                        <section className="admin-home__details">
+                            <Card title="Estado de los turnos">
+                                <div className="admin-home__appointment-stats">
+                                    <p>Pendientes: {turnosPendientes}</p>
+                                    <p>Confirmados: {turnosConfirmados}</p>
+                                    <p>Completados: {turnosCompletados}</p>
+                                    <p>Cancelados: {turnosCancelados}</p>
+                                </div>
+                            </Card>
+                        </section>
+                    </>
+                )}
+            </div>
         </AppLayout>
     );
 }

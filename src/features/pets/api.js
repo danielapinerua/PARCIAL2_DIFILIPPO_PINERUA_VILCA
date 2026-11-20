@@ -47,7 +47,11 @@ export async function createPet(pet) {
         const pets = readMock();
         const newPet = {
             ...pet,
-            id: pets.reduce((max, item) => Math.max(max, item.id), 0) + 1,
+            id:
+                pets.reduce(
+                    (max, item) => Math.max(max, Number(item.id) || 0),
+                    0
+                ) + 1,
         };
         writeMock([...pets, newPet]);
         return newPet;
@@ -75,10 +79,12 @@ export async function updatePet(id, changes) {
     if (!API_READY) {
         const pets = readMock();
         const updated = pets.map((pet) =>
-            pet.id === id ? { ...pet, ...changes, id } : pet
+            Number(pet.id) === Number(id)
+                ? { ...pet, ...changes, id: pet.id }
+                : pet
         );
         writeMock(updated);
-        return updated.find((pet) => pet.id === id);
+        return updated.find((pet) => Number(pet.id) === Number(id));
     }
 
     const response = await fetch(`/pets/${id}`, {
@@ -100,7 +106,9 @@ export async function updatePet(id, changes) {
  */
 export async function deletePet(id) {
     if (!API_READY) {
-        writeMock(readMock().filter((pet) => pet.id !== id));
+        writeMock(
+            readMock().filter((pet) => Number(pet.id) !== Number(id))
+        );
         return;
     }
 

@@ -4,6 +4,12 @@
     gap: 24px;
 }
 
+.admin-home__center {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-8);
+}
+
 .admin-home__stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

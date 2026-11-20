@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
-import { getUsers } from '../api';
+import { getUsers, updateUser } from '../api';
 
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
 import Button from '@/components/Button/Button';
 import Card from '@/components/Card/Card';
+import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import Table from '@/components/Table/Table';
+import useToast from '@/components/Toast/useToast';
+import UserFormModal from './UserFormModal';
 
 import './AdminUsersPage.css';
 
@@ -31,12 +34,17 @@ const ROLE_LABELS = {
 };
 
 function AdminUsersPage() {
-    const { user, logout } = useAuth();
+    const { user, login, logout } = useAuth();
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [toDeactivate, setToDeactivate] = useState(null);
+    const [saving, setSaving] = useState(false);
 
     const loadUsers = useCallback(async () => {
         try {
@@ -59,6 +67,60 @@ function AdminUsersPage() {
         logout();
         navigate('/login');
     };
+
+    const openCreate = () => {
+        setEditingUser(null);
+        setFormOpen(true);
+    };
+
+    const openEdit = (selectedUser) => {
+        setEditingUser(selectedUser);
+        setFormOpen(true);
+    };
+
+    const closeForm = () => {
+        setFormOpen(false);
+        setEditingUser(null);
+    };
+
+    const handleSaved = async (savedUser) => {
+        await loadUsers();
+
+        if (savedUser && Number(savedUser.id) === Number(user.id)) {
+            login(savedUser);
+        }
+    };
+
+    const handleActivate = async (selectedUser) => {
+        try {
+            await updateUser(selectedUser.id, { active: true });
+            toast.success('Usuario activado.');
+            await loadUsers();
+        } catch (err) {
+            toast.error(err.message || 'No se pudo activar el usuario.');
+        }
+    };
+
+    const handleDeactivate = async () => {
+        if (!toDeactivate) return;
+
+        setSaving(true);
+
+        try {
+            await updateUser(toDeactivate.id, { active: false });
+            toast.success('Usuario desactivado.');
+            setToDeactivate(null);
+            await loadUsers();
+        } catch (err) {
+            toast.error(err.message || 'No se pudo desactivar el usuario.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const activeAdmins = users.filter(
+        (item) => item.role === 'admin' && item.active
+    ).length;
 
     const columns = [
         {
@@ -88,6 +150,56 @@ function AdminUsersPage() {
                 </Badge>
             ),
         },
+        {
+            key: 'actions',
+            header: '',
+            render: (row) => {
+                const isSelf = Number(row.id) === Number(user.id);
+                const isLastAdmin =
+                    row.role === 'admin' &&
+                    row.active &&
+                    activeAdmins <= 1;
+                const cannotDeactivate = isSelf || isLastAdmin;
+
+                return (
+                    <div className="admin-users__actions">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openEdit(row)}
+                        >
+                            Editar
+                        </Button>
+
+                        {row.active ? (
+                            <Button
+                                size="sm"
+                                variant="danger"
+                                disabled={cannotDeactivate}
+                                title={
+                                    isSelf
+                                        ? 'No podés desactivar tu propia cuenta.'
+                                        : isLastAdmin
+                                          ? 'No podés desactivar al último administrador activo.'
+                                          : undefined
+                                }
+                                onClick={() => setToDeactivate(row)}
+                            >
+                                Desactivar
+                            </Button>
+                        ) : (
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleActivate(row)}
+                            >
+                                Activar
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
+        },
     ];
 
     return (
@@ -101,7 +213,10 @@ function AdminUsersPage() {
             <div className="admin-users">
                 <PageHeader
                     title="Usuarios"
-                    subtitle="Consultá los usuarios registrados en PataSana."
+                    subtitle="Gestioná altas, datos y estado de los usuarios de PataSana."
+                    actions={
+                        <Button onClick={openCreate}>Nuevo usuario</Button>
+                    }
                 />
 
                 <Card>
@@ -120,6 +235,31 @@ function AdminUsersPage() {
                     )}
                 </Card>
             </div>
+
+            {formOpen && (
+                <UserFormModal
+                    isOpen
+                    user={editingUser}
+                    isSelf={Number(editingUser?.id) === Number(user.id)}
+                    onClose={closeForm}
+                    onSaved={handleSaved}
+                />
+            )}
+
+            <ConfirmDialog
+                isOpen={Boolean(toDeactivate)}
+                title="Desactivar usuario"
+                message={
+                    toDeactivate
+                        ? `Se va a desactivar a ${toDeactivate.firstName} ${toDeactivate.lastName}. No va a poder iniciar sesión hasta que lo actives nuevamente.`
+                        : ''
+                }
+                confirmLabel="Sí, desactivar"
+                danger
+                loading={saving}
+                onConfirm={handleDeactivate}
+                onCancel={() => setToDeactivate(null)}
+            />
         </AppLayout>
     );
 }

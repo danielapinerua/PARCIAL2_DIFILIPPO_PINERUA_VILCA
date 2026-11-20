@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
     // Si tiene un rol no autorizado, lo enviamos a su inicio
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/home" replace />;
     }
 
     // Si está autorizado, mostramos la página

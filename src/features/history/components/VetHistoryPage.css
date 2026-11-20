@@ -1,9 +1,15 @@
 .vet-history {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--space-6);
     width: 100%;
-    padding-bottom: 32px;
+    padding-bottom: var(--space-8);
+}
+
+.vet-history__center {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-8);
 }
 
 .vet-history-timeline {
@@ -20,8 +26,8 @@
     flex-direction: column;
     gap: 12px;
     padding: 20px;
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
 }
 
@@ -37,30 +43,30 @@
 .vet-history-timeline__date {
     font-size: 14px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--color-text-muted);
 }
 
 .vet-history-timeline__reason {
     margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    color: #1e293b;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary);
 }
 
 .vet-history-timeline__info {
     margin: 0;
-    font-size: 14px;
-    color: #64748b;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
     line-height: 1.5;
 }
 
 .vet-history-timeline__notes {
     margin: 4px 0;
     padding: 12px 14px;
-    background-color: #f8fafc;
-    border-radius: 8px;
-    color: #334155;
-    font-size: 14px;
+    background-color: var(--color-bg);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
     line-height: 1.6;
 }
 
@@ -71,25 +77,25 @@
 }
 
 .vet-history-timeline__editor label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #334155;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
 }
 
 .vet-history-timeline__editor textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     resize: vertical;
     box-sizing: border-box;
 }
 
 .vet-history-timeline__editor textarea:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--color-primary);
 }
 
 .vet-history-timeline__editor > div {

@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
-
-import appointmentsMock from '@/features/appointments/mocks/appointments.json';
-import petsMock from '@/features/pets/mocks/pets.json';
-import treatmentsMock from '@/features/treatments/mocks/treatments.json';
-import usersMock from '@/features/users/mocks/users.json';
+import { getAppointments, updateAppointment } from '@/features/appointments';
+import { getPets } from '@/features/pets';
+import { getTreatments } from '@/features/treatments';
+import { getUsers } from '@/features/users';
 
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
@@ -16,6 +15,8 @@ import FilterBar from '@/components/FilterBar/FilterBar';
 import Input from '@/components/Input/Input';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import Select from '@/components/Select/Select';
+import Spinner from '@/components/Spinner/Spinner';
+import useToast from '@/components/Toast/useToast';
 
 import './VetHistoryPage.css';
 
@@ -35,17 +36,6 @@ const EMPTY_FILTERS = {
     treatment: '',
 };
 
-const dateFromOffset = (offset) => {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-};
-
 const formatDate = (iso) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('es-AR', {
         day: 'numeric',
@@ -56,32 +46,60 @@ const formatDate = (iso) =>
 function VetHistoryPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const toast = useToast();
 
-    const [appointments, setAppointments] = useState(() =>
-        appointmentsMock.map((appointment) => ({
-            ...appointment,
-            date: dateFromOffset(appointment.dateOffsetDays),
-        }))
-    );
-
+    const [appointments, setAppointments] = useState([]);
+    const [pets, setPets] = useState([]);
+    const [treatments, setTreatments] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [editingAppointmentId, setEditingAppointmentId] = useState(null);
     const [editedNotes, setEditedNotes] = useState('');
-
+    const [savingNotes, setSavingNotes] = useState(false);
     const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-    const pets = petsMock;
-    const treatments = treatmentsMock;
-    const users = usersMock;
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+
+            const [nextAppointments, nextPets, nextTreatments, nextUsers] =
+                await Promise.all([
+                    getAppointments(),
+                    getPets(),
+                    getTreatments(),
+                    getUsers(),
+                ]);
+
+            setAppointments(nextAppointments);
+            setPets(nextPets);
+            setTreatments(nextTreatments);
+            setUsers(nextUsers);
+            setLoadError('');
+        } catch (err) {
+            setLoadError(
+                err.message || 'No se pudo cargar el historial clínico.'
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const getPet = (petId) =>
-        pets.find((pet) => pet.id === petId);
+        pets.find((pet) => Number(pet.id) === Number(petId));
 
     const getPetName = (petId) =>
         getPet(petId)?.name || 'Mascota no encontrada';
 
     const getOwnerName = (petId) => {
         const pet = getPet(petId);
-        const owner = users.find((u) => u.id === pet?.ownerId);
+        const owner = users.find(
+            (item) => Number(item.id) === Number(pet?.ownerId)
+        );
 
         return owner
             ? `${owner.firstName} ${owner.lastName}`
@@ -89,7 +107,9 @@ function VetHistoryPage() {
     };
 
     const getVetName = (vetId) => {
-        const vet = users.find((u) => u.id === vetId);
+        const vet = users.find(
+            (item) => Number(item.id) === Number(vetId)
+        );
 
         return vet
             ? `Dr. ${vet.firstName} ${vet.lastName}`
@@ -97,7 +117,9 @@ function VetHistoryPage() {
     };
 
     const getTreatmentName = (treatmentId) =>
-        treatments.find((treatment) => treatment.id === treatmentId)?.name;
+        treatments.find(
+            (treatment) => Number(treatment.id) === Number(treatmentId)
+        )?.name;
 
     const treatmentOptions = [
         { value: '', label: 'Todos' },
@@ -111,7 +133,12 @@ function VetHistoryPage() {
     const history = useMemo(
         () =>
             appointments
-                .filter((appointment) => appointment.status === 'completed')
+                .filter(
+                    (appointment) =>
+                        appointment.status === 'completed' &&
+                        Number(appointment.veterinarianId) ===
+                            Number(user.id)
+                )
                 .filter(
                     (appointment) =>
                         !filters.pet ||
@@ -133,7 +160,8 @@ function VetHistoryPage() {
                     }
 
                     return (
-                        appointment.treatmentId === Number(filters.treatment)
+                        Number(appointment.treatmentId) ===
+                        Number(filters.treatment)
                     );
                 })
                 .sort(
@@ -141,7 +169,7 @@ function VetHistoryPage() {
                         b.date.localeCompare(a.date) ||
                         b.time.localeCompare(a.time)
                 ),
-        [appointments, filters]
+        [appointments, filters, user.id]
     );
 
     const updateFilter = (field) => (value) =>
@@ -160,22 +188,24 @@ function VetHistoryPage() {
         setEditedNotes(appointment.notes || '');
     };
 
-    const handleSaveNotes = (appointmentId) => {
-        setAppointments((current) =>
-            current.map((appointment) =>
-                appointment.id === appointmentId &&
-                    appointment.veterinarianId === user.id &&
-                    appointment.status === 'completed'
-                    ? {
-                        ...appointment,
-                        notes: editedNotes.trim(),
-                    }
-                    : appointment
-            )
-        );
+    const handleSaveNotes = async (appointmentId) => {
+        if (savingNotes) return;
 
-        setEditingAppointmentId(null);
-        setEditedNotes('');
+        setSavingNotes(true);
+
+        try {
+            await updateAppointment(appointmentId, {
+                notes: editedNotes.trim(),
+            });
+            toast.success('Notas clínicas actualizadas.');
+            setEditingAppointmentId(null);
+            setEditedNotes('');
+            await loadData();
+        } catch (err) {
+            toast.error(err.message || 'No se pudieron guardar las notas.');
+        } finally {
+            setSavingNotes(false);
+        }
     };
 
     const handleCancelEdit = () => {
@@ -184,6 +214,24 @@ function VetHistoryPage() {
     };
 
     const renderTimeline = () => {
+        if (loading) {
+            return (
+                <div className="vet-history__center">
+                    <Spinner label="Cargando historial…" />
+                </div>
+            );
+        }
+
+        if (loadError) {
+            return (
+                <EmptyState
+                    title="No se pudo cargar el historial"
+                    message={loadError}
+                    action={<Button onClick={loadData}>Reintentar</Button>}
+                />
+            );
+        }
+
         if (history.length === 0) {
             return (
                 <EmptyState
@@ -203,7 +251,9 @@ function VetHistoryPage() {
                     const isEditing =
                         editingAppointmentId === appointment.id;
 
-                    const canEdit = appointment.veterinarianId === user.id;
+                    const canEdit =
+                        Number(appointment.veterinarianId) ===
+                        Number(user.id);
 
                     return (
                         <li
@@ -248,8 +298,8 @@ function VetHistoryPage() {
                                     <textarea
                                         id={`notes-${appointment.id}`}
                                         value={editedNotes}
-                                        onChange={(e) =>
-                                            setEditedNotes(e.target.value)
+                                        onChange={(event) =>
+                                            setEditedNotes(event.target.value)
                                         }
                                         rows={4}
                                     />
@@ -260,6 +310,7 @@ function VetHistoryPage() {
                                             onClick={() =>
                                                 handleSaveNotes(appointment.id)
                                             }
+                                            loading={savingNotes}
                                         >
                                             Guardar
                                         </Button>
@@ -268,6 +319,7 @@ function VetHistoryPage() {
                                             size="sm"
                                             variant="secondary"
                                             onClick={handleCancelEdit}
+                                            disabled={savingNotes}
                                         >
                                             Cancelar
                                         </Button>
@@ -312,15 +364,15 @@ function VetHistoryPage() {
                     })),
                 ]}
                 value={filters.pet}
-                onChange={(e) => updateFilter('pet')(e.target.value)}
+                onChange={(event) => updateFilter('pet')(event.target.value)}
             />
 
             <Input
                 label="Desde"
                 type="date"
                 value={filters.from}
-                onChange={(e) =>
-                    updateFilter('from')(e.target.value)
+                onChange={(event) =>
+                    updateFilter('from')(event.target.value)
                 }
             />
 
@@ -328,8 +380,8 @@ function VetHistoryPage() {
                 label="Hasta"
                 type="date"
                 value={filters.to}
-                onChange={(e) =>
-                    updateFilter('to')(e.target.value)
+                onChange={(event) =>
+                    updateFilter('to')(event.target.value)
                 }
             />
 
@@ -337,7 +389,9 @@ function VetHistoryPage() {
                 label="Tratamiento"
                 options={treatmentOptions}
                 value={filters.treatment}
-                onChange={(e) => updateFilter('treatment')(e.target.value)}
+                onChange={(event) =>
+                    updateFilter('treatment')(event.target.value)
+                }
             />
         </FilterBar>
     );

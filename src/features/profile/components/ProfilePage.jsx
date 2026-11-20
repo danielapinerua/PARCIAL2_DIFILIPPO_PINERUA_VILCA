@@ -31,6 +31,7 @@ const SIDEBAR_BY_ROLE = {
     ],
     receptionist: [
         { href: '/home', label: 'Inicio' },
+        { href: '/schedule', label: 'Mi agenda' },
         { href: '/appointments', label: 'Turnos' },
         { href: '/clients', label: 'Clientes y mascotas' },
         { href: '/payments', label: 'Pagos' },

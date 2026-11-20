@@ -7,11 +7,12 @@ import interactionPlugin from '@fullcalendar/react/interaction';
 import classicTheme from '@fullcalendar/react/themes/classic';
 import esLocale from '@fullcalendar/react/locales/es';
 import { useAuth } from '@/features/auth';
-import petsMock from '@/features/pets/mocks/pets.json';
-import usersMock from '@/features/users/mocks/users.json';
-import appointmentsMock from '../mocks/appointments.json';
-import treatmentsMock from '@/features/treatments/mocks/treatments.json';
-import { toISODate, hydrateDateOffset } from '@/utils/dates';
+import { getPets } from '@/features/pets';
+import { getUsers } from '@/features/users';
+import { getTreatments } from '@/features/treatments';
+import { getAppointments } from '../api';
+import { TIME_SLOTS, currentTime } from '../utils';
+import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Button from '@/components/Button/Button';
 import Card from '@/components/Card/Card';
@@ -19,8 +20,9 @@ import EmptyState from '@/components/EmptyState/EmptyState';
 import Input from '@/components/Input/Input';
 import PageHeader from '@/components/PageHeader/PageHeader';
 import Select from '@/components/Select/Select';
-import Modal from '@/components/Modal/Modal';
 import Spinner from '@/components/Spinner/Spinner';
+import useToast from '@/components/Toast/useToast';
+import NewAppointmentModal from './NewAppointmentModal';
 import '@fullcalendar/react/skeleton.css';
 import '@fullcalendar/react/themes/classic/theme.css';
 import '@fullcalendar/react/themes/classic/palette.css';
@@ -213,6 +215,7 @@ function Scheduler() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const controller = useCalendarController();
+    const toast = useToast();
 
     const isVeterinarian = user?.role === 'veterinarian';
     const isReceptionist = user?.role === 'receptionist';
@@ -221,6 +224,7 @@ function Scheduler() {
     const [appointments, setAppointments] = useState([]);
     const [pets, setPets] = useState([]);
     const [users, setUsers] = useState([]);
+    const [treatments, setTreatments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const [vetFilter, setVetFilter] = useState('all');
@@ -232,26 +236,31 @@ function Scheduler() {
     });
     const [periodOpen, setPeriodOpen] = useState(false);
     const [periodDate, setPeriodDate] = useState(() => toISODate(new Date()));
-    const [selectedSlot, setSelectedSlot] = useState(null);
-    const [selectedPetId, setSelectedPetId] = useState('');
-    const [selectedVetId, setSelectedVetId] = useState('');
-    const [selectedTreatmentId, setSelectedTreatmentId] = useState('');
-    const [appointmentReason, setAppointmentReason] = useState('');
-    const [appointmentAmount, setAppointmentAmount] = useState('');
-    const [appointmentNotes, setAppointmentNotes] = useState('');
+    const [newAppointment, setNewAppointment] = useState(null);
     const periodRef = useRef(null);
 
-    const loadData = useCallback(() => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         setLoadError('');
 
-        setAppointments(
-            hydrateDateOffset(appointmentsMock, 'dateOffsetDays', 'date')
-        );
-        setPets(petsMock);
-        setUsers(usersMock);
+        try {
+            const [nextAppointments, nextPets, nextUsers, nextTreatments] =
+                await Promise.all([
+                    getAppointments(),
+                    getPets(),
+                    getUsers(),
+                    getTreatments(),
+                ]);
 
-        setLoading(false);
+            setAppointments(nextAppointments);
+            setPets(nextPets);
+            setUsers(nextUsers);
+            setTreatments(nextTreatments);
+        } catch {
+            setLoadError('No se pudo cargar la agenda. Intentá nuevamente.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => {
@@ -309,49 +318,14 @@ function Scheduler() {
 
         return options;
     }, [users]);
-    const petOptions = useMemo(
+    const vets = useMemo(
         () =>
-            pets
-                .filter((pet) => pet.active !== false)
-                .map((pet) => ({
-                    value: String(pet.id),
-                    label: pet.name,
-                })),
-        [pets]
+            users.filter(
+                (item) =>
+                    item.role === 'veterinarian' && item.active !== false
+            ),
+        [users]
     );
-
-    const availableTreatments = useMemo(() => {
-        return treatmentsMock.filter((treatment) => {
-            if (treatment.status !== 'active') return false;
-
-            const scheduledSessions = appointments.filter(
-                (appointment) =>
-                    appointment.treatmentId === treatment.id &&
-                    appointment.status !== 'cancelled'
-            ).length;
-
-            return scheduledSessions < treatment.totalSessions;
-        });
-    }, [appointments]);
-
-    const treatmentOptions = useMemo(
-        () =>
-            availableTreatments
-                .filter(
-                    (treatment) =>
-                        String(treatment.petId) === selectedPetId
-                )
-                .map((treatment) => ({
-                    value: String(treatment.id),
-                    label: treatment.name,
-                })),
-        [availableTreatments, selectedPetId]
-    );
-
-    const handlePetChange = (event) => {
-        setSelectedPetId(event.target.value);
-        setSelectedTreatmentId('');
-    };
 
     const filteredAppointments = useMemo(() => {
         if (!user) return [];
@@ -405,77 +379,47 @@ function Scheduler() {
 
     const handleDateClick = useCallback(
         (info) => {
-            console.log('CLIC EN CALENDARIO:', info.dateStr);
-
             if (!isReceptionist) return;
 
-            setSelectedSlot({
-                date: info.date,
-                dateStr: info.dateStr,
-            });
+            if (info.view.type === 'dayGridMonth') {
+                toast.info('Elegí un horario en la vista Día o Semana.');
+                return;
+            }
+
+            if (info.allDay) {
+                toast.info('Elegí un horario específico, no Todo el día.');
+                return;
+            }
+
+            const date = toISODate(info.date);
+            const today = toISODate(new Date());
+
+            if (date < today) {
+                toast.error('No podés crear un turno en una fecha pasada.');
+                return;
+            }
+
+            const time = `${pad(info.date.getHours())}:${pad(
+                info.date.getMinutes()
+            )}`;
+
+            if (!TIME_SLOTS.includes(time)) {
+                toast.error('Elegí un horario entre 09:00 y 17:30.');
+                return;
+            }
+
+            if (date === today && time <= currentTime()) {
+                toast.error('Ese horario ya pasó.');
+                return;
+            }
+
+            setNewAppointment({ date, time });
         },
-        [isReceptionist]
+        [isReceptionist, toast]
     );
 
-    const resetAppointmentForm = () => {
-        setSelectedPetId('');
-        setSelectedVetId('');
-        setSelectedTreatmentId('');
-        setAppointmentReason('');
-        setAppointmentAmount('');
-        setAppointmentNotes('');
-    };
-
-    const handleSaveAppointment = () => {
-        if (
-            !selectedSlot ||
-            !selectedPetId ||
-            !selectedVetId ||
-            !appointmentReason.trim() ||
-            !appointmentAmount
-        ) {
-            return;
-        }
-
-        const selectedDate = new Date(selectedSlot.date);
-        const today = new Date();
-
-        today.setHours(0, 0, 0, 0);
-        selectedDate.setHours(0, 0, 0, 0);
-
-        const dateOffsetDays = Math.round(
-            (selectedDate - today) / (1000 * 60 * 60 * 24)
-        );
-
-        const newAppointment = {
-            id: Math.max(0, ...appointments.map((appointment) => appointment.id)) + 1,
-            petId: Number(selectedPetId),
-            veterinarianId: Number(selectedVetId),
-            treatmentId: selectedTreatmentId
-                ? Number(selectedTreatmentId)
-                : null,
-            dateOffsetDays,
-            time: selectedSlot.date.toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-            }),
-            reason: appointmentReason.trim(),
-            status: 'confirmed',
-            amount: Number(appointmentAmount),
-            notes: appointmentNotes.trim(),
-        };
-
-        setAppointments((previousAppointments) => [
-            ...previousAppointments,
-            {
-                ...newAppointment,
-                date: toISODate(selectedSlot.date),
-            },
-        ]);
-
-        resetAppointmentForm();
-        setSelectedSlot(null);
+    const openNewAppointment = () => {
+        setNewAppointment({ date: toISODate(new Date()), time: '' });
     };
 
     const handleLogout = () => {
@@ -512,6 +456,13 @@ function Scheduler() {
                         isVeterinarian
                             ? 'Consultá y organizá tus turnos.'
                             : 'Consultá los turnos de todos los veterinarios.'
+                    }
+                    actions={
+                        isReceptionist ? (
+                            <Button onClick={openNewAppointment}>
+                                Nuevo turno
+                            </Button>
+                        ) : undefined
                     }
                 />
 
@@ -746,71 +697,19 @@ function Scheduler() {
                 </div>
             </div>
 
-            <Modal
-                isOpen={Boolean(selectedSlot)}
-                title="Nuevo turno"
-                onClose={() => {
-                    resetAppointmentForm();
-                    setSelectedSlot(null);
-                }}
-            >
-                <div className="schedule-session-form">
-                    <p>
-                        Horario seleccionado: {selectedSlot?.dateStr}
-                    </p>
-
-                    <Select
-                        label="Mascota"
-                        options={petOptions}
-                        value={selectedPetId}
-                        onChange={handlePetChange}
-                        placeholder="Seleccioná una mascota"
-                    />
-                    <Select
-                        label="Veterinario"
-                        options={vetOptions.filter((option) => option.value !== 'all')}
-                        value={selectedVetId}
-                        onChange={(event) => setSelectedVetId(event.target.value)}
-                        placeholder="Seleccioná un veterinario"
-                    />
-                    <Select
-                        label="Tratamiento"
-                        options={treatmentOptions}
-                        value={selectedTreatmentId}
-                        onChange={(event) => setSelectedTreatmentId(event.target.value)}
-                        placeholder={
-                            selectedPetId
-                                ? 'Seleccioná un tratamiento'
-                                : 'Primero seleccioná una mascota'
-                        }
-                    />
-                    <Input
-                        label="Motivo del turno"
-                        name="reason"
-                        value={appointmentReason}
-                        onChange={(event) => setAppointmentReason(event.target.value)}
-                        placeholder="Ej.: Control de seguimiento"
-                    />
-                    <Input
-                        label="Importe"
-                        name="amount"
-                        type="number"
-                        value={appointmentAmount}
-                        onChange={(event) => setAppointmentAmount(event.target.value)}
-                        placeholder="Ej.: 15000"
-                    />
-                    <Input
-                        label="Observaciones (opcional)"
-                        name="notes"
-                        value={appointmentNotes}
-                        onChange={(event) => setAppointmentNotes(event.target.value)}
-                        placeholder="Escribí alguna observación..."
-                    />
-                    <Button onClick={handleSaveAppointment}>
-                        Guardar turno
-                    </Button>
-                </div>
-            </Modal>
+            {isReceptionist && newAppointment && (
+                <NewAppointmentModal
+                    isOpen
+                    initialSlot={newAppointment}
+                    defaultVetId={vetFilter !== 'all' ? vetFilter : ''}
+                    pets={pets}
+                    vets={vets}
+                    treatments={treatments}
+                    appointments={appointments}
+                    onClose={() => setNewAppointment(null)}
+                    onCreated={loadData}
+                />
+            )}
         </AppLayout>
     );
 }

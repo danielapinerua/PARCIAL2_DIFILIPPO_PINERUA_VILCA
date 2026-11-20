@@ -2,6 +2,7 @@ import { useAuth } from '@/features/auth';
 import VetHomePage from './VetHomePage';
 import ReceptionistHomePage from './ReceptionistHomePage';
 import ClientHomePage from './ClientHomePage';
+import AdminHomePage from './AdminHomePage';
 
 function RoleHome() {
     const { user } = useAuth();
@@ -13,6 +14,8 @@ function RoleHome() {
             return <ReceptionistHomePage />;
         case 'client':
             return <ClientHomePage />;
+        case 'admin':
+            return <AdminHomePage />;
         default:
             return null;
     }
