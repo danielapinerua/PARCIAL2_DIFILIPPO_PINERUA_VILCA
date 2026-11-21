@@ -1,0 +1,14 @@
+PataSana – Usuarios de prueba
+
+1. CLIENTE
+    Email: cliente@patasana.com
+    Contraseña: 123456
+2. VETERINARIO
+    Email: veterinario@patasana.com
+    Contraseña: 123456
+3. RECEPCIONISTA
+    Email: recepcion@patasana.com
+    Contraseña: 123456
+4. ADMINISTRADOR
+    Email: admin@patasana.com
+    Contraseña: 123456
