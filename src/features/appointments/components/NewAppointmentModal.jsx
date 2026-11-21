@@ -59,7 +59,6 @@ function NewAppointmentModal({
             getFreeSlots(appointments, {
                 veterinarianId: vetId,
                 date,
-                today,
             }).includes(time);
 
         return {
@@ -103,9 +102,8 @@ function NewAppointmentModal({
             getFreeSlots(appointments, {
                 veterinarianId: form.vetId,
                 date: form.date,
-                today,
             }),
-        [appointments, form.vetId, form.date, today]
+        [appointments, form.vetId, form.date]
     );
 
     const treatmentOptions = useMemo(() => {
@@ -168,7 +166,6 @@ function NewAppointmentModal({
         const nextSlots = getFreeSlots(appointments, {
             veterinarianId: vetId,
             date: form.date,
-            today,
         });
 
         setForm((current) => ({
@@ -202,8 +199,6 @@ function NewAppointmentModal({
 
         if (!form.date) {
             nextErrors.date = 'Elegí la fecha.';
-        } else if (form.date < today) {
-            nextErrors.date = 'La fecha tiene que ser de hoy en adelante.';
         }
 
         if (!form.time) {
@@ -327,7 +322,6 @@ function NewAppointmentModal({
                     value={form.date}
                     onChange={handleDateChange}
                     error={errors.date}
-                    min={today}
                     required
                 />
                 <Select

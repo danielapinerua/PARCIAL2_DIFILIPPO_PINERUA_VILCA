@@ -11,7 +11,7 @@ import { getPets } from '@/features/pets';
 import { getUsers } from '@/features/users';
 import { getTreatments } from '@/features/treatments';
 import { getAppointments } from '../api';
-import { TIME_SLOTS, currentTime } from '../utils';
+import { TIME_SLOTS } from '../utils';
 import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Button from '@/components/Button/Button';
@@ -392,24 +392,12 @@ function Scheduler() {
             }
 
             const date = toISODate(info.date);
-            const today = toISODate(new Date());
-
-            if (date < today) {
-                toast.error('No podés crear un turno en una fecha pasada.');
-                return;
-            }
-
             const time = `${pad(info.date.getHours())}:${pad(
                 info.date.getMinutes()
             )}`;
 
             if (!TIME_SLOTS.includes(time)) {
                 toast.error('Elegí un horario entre 09:00 y 17:30.');
-                return;
-            }
-
-            if (date === today && time <= currentTime()) {
-                toast.error('Ese horario ya pasó.');
                 return;
             }
 

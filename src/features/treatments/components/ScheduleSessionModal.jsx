@@ -1,7 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { createAppointment } from '@/features/appointments';
 import { getFreeSlots } from '@/features/appointments/utils';
-import { toISODate } from '@/utils/dates';
 import Button from '@/components/Button/Button';
 import Input from '@/components/Input/Input';
 import Modal from '@/components/Modal/Modal';
@@ -37,7 +36,6 @@ function ScheduleSessionModal({
 }) {
     const toast = useToast();
     const formId = useId();
-    const [today] = useState(() => toISODate(new Date()));
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
@@ -47,9 +45,8 @@ function ScheduleSessionModal({
             getFreeSlots(appointments, {
                 veterinarianId: treatment?.veterinarianId,
                 date: form.date,
-                today,
             }),
-        [appointments, treatment, form.date, today]
+        [appointments, treatment, form.date]
     );
 
     const updateField = (field) => (event) => {
@@ -69,8 +66,6 @@ function ScheduleSessionModal({
 
         if (!form.date) {
             nextErrors.date = 'Elegí la fecha de la sesión.';
-        } else if (form.date < today) {
-            nextErrors.date = 'La fecha tiene que ser de hoy en adelante.';
         }
 
         if (!form.time) {
@@ -180,7 +175,6 @@ function ScheduleSessionModal({
                     value={form.date}
                     onChange={updateField('date')}
                     error={errors.date}
-                    min={today}
                     required
                     data-autofocus
                 />

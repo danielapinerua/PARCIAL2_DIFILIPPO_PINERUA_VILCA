@@ -85,14 +85,16 @@ function AdminHistoryPage() {
     }, [loadData]);
 
     const getPet = (petId) =>
-        pets.find((pet) => pet.id === petId);
+        pets.find((pet) => Number(pet.id) === Number(petId));
 
     const getPetName = (petId) =>
         getPet(petId)?.name || 'Mascota no encontrada';
 
     const getOwnerName = (petId) => {
         const pet = getPet(petId);
-        const owner = users.find((u) => u.id === pet?.ownerId);
+        const owner = users.find(
+            (u) => Number(u.id) === Number(pet?.ownerId)
+        );
 
         return owner
             ? `${owner.firstName} ${owner.lastName}`
@@ -100,7 +102,7 @@ function AdminHistoryPage() {
     };
 
     const getVetName = (vetId) => {
-        const vet = users.find((u) => u.id === vetId);
+        const vet = users.find((u) => Number(u.id) === Number(vetId));
 
         return vet
             ? `Dr. ${vet.firstName} ${vet.lastName}`
@@ -108,7 +110,9 @@ function AdminHistoryPage() {
     };
 
     const getTreatmentName = (treatmentId) =>
-        treatments.find((t) => t.id === treatmentId)?.name;
+        treatments.find(
+            (t) => Number(t.id) === Number(treatmentId)
+        )?.name;
 
     const treatmentOptions = [
         { value: '', label: 'Todos' },
@@ -139,11 +143,12 @@ function AdminHistoryPage() {
         [appointments, filters]
     );
 
-    const updateFilter = (field) => (value) =>
+    const updateFilter = (field) => (event) => {
         setFilters((current) => ({
             ...current,
-            [field]: value,
+            [field]: event.target.value,
         }));
+    };
 
     const handleLogout = () => {
         logout();
@@ -247,14 +252,14 @@ function AdminHistoryPage() {
                         label="Desde"
                         type="date"
                         value={filters.from}
-                        onChange={(e) => updateFilter('from')(e.target.value)}
+                        onChange={updateFilter('from')}
                     />
 
                     <Input
                         label="Hasta"
                         type="date"
                         value={filters.to}
-                        onChange={(e) => updateFilter('to')(e.target.value)}
+                        onChange={updateFilter('to')}
                     />
 
                     <Select

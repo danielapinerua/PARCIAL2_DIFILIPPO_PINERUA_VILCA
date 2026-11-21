@@ -5,7 +5,6 @@ import { getPets } from '@/features/pets';
 import { getUsers } from '@/features/users';
 import { createAppointment, getAppointments, updateAppointment } from '../api';
 import { DEFAULT_AMOUNT, getFreeSlots } from '../utils';
-import { toISODate } from '@/utils/dates';
 import AppLayout from '@/components/AppLayout/AppLayout';
 import Badge from '@/components/Badge/Badge';
 import Button from '@/components/Button/Button';
@@ -69,8 +68,6 @@ function ClientAppointmentsPage() {
 
     const [toCancel, setToCancel] = useState(null);
 
-    const today = toISODate(new Date());
-
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
@@ -121,9 +118,8 @@ function ClientAppointmentsPage() {
         return getFreeSlots(appointments, {
             veterinarianId: form.veterinarianId,
             date: form.date,
-            today,
         });
-    }, [appointments, form.veterinarianId, form.date, today]);
+    }, [appointments, form.veterinarianId, form.date]);
 
     const updateFilter = (field) => (e) =>
         setFilters((current) => ({ ...current, [field]: e.target.value }));
@@ -157,7 +153,6 @@ function ClientAppointmentsPage() {
         if (!form.petId) newErrors.petId = 'Elegí la mascota.';
         if (!form.veterinarianId) newErrors.veterinarianId = 'Elegí el veterinario.';
         if (!form.date) newErrors.date = 'Elegí la fecha.';
-        else if (form.date < today) newErrors.date = 'La fecha tiene que ser de hoy en adelante.';
         if (!form.time) newErrors.time = 'Elegí un horario libre.';
         if (!form.reason.trim()) newErrors.reason = 'Contanos el motivo de la consulta.';
         return newErrors;
@@ -210,7 +205,7 @@ function ClientAppointmentsPage() {
     };
 
     const canCancel = (a) =>
-        (a.status === 'pending' || a.status === 'confirmed') && a.date >= today;
+        a.status === 'pending' || a.status === 'confirmed';
 
     const columns = [
         { key: 'date', header: 'Fecha', render: (row) => formatDate(row.date) },

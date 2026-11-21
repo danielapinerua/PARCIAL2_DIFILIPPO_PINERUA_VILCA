@@ -235,6 +235,18 @@ features/<feature>/
 
 Cada feature expone funciones async con la misma forma: primero evalúan `VITE_API_READY`; en modo mock leen/escriben `localStorage` (con fallback al JSON de `mocks/`); en modo API ejecutan `fetch` al endpoint correspondiente y normalizan errores con mensajes en español.
 
+### Seed inicial de localStorage
+
+Al iniciar la aplicación, `src/utils/seedStorage.js` copia los fixtures JSON a `localStorage` si las claves no existen o están corruptas. Se ejecuta una sola vez desde `src/main.jsx`, antes de montar React.
+
+- No sobrescribe datos existentes.
+- Hidrata las fechas relativas de turnos, tratamientos y pagos.
+- Guarda la versión del seed en `patasana_seed_version`.
+- Si una clave falta, se vuelve a crear desde su JSON.
+- Si `localStorage` no está disponible, las APIs conservan el fallback al JSON.
+
+A partir del seed, la fuente de datos en runtime es `localStorage`; los JSON quedan como datos iniciales y de respaldo.
+
 | Feature | Clave de `localStorage` | Endpoints REST esperados (modo API) |
 |---|---|---|
 | `users` | `patasana_users` | `GET/POST /users`, `PATCH /users/:id`, `POST /users/:id/password` |
@@ -250,7 +262,7 @@ Los fixtures guardan **offsets en días** (`dateOffsetDays`, `startDateOffsetDay
 
 ### Persistencia en modo mock
 
-`pets`, `appointments`, `treatments` y `users` **persisten** los cambios en `localStorage`, por lo que las altas/modificaciones sobreviven a recargas. Los usuarios se pueden crear, editar y activar/desactivar desde `/users`; la agenda de recepción también persiste los turnos que crea. Los pagos, en cambio, se leen de `mocks/payments.json` (solo lectura). Para volver al estado original del fixture: borrar las claves `patasana_*` en DevTools → Application → Local Storage.
+`pets`, `appointments`, `treatments`, `users` y `payments` viven en `localStorage` después del seed. Las altas/modificaciones sobreviven a recargas. Los usuarios se pueden crear, editar y activar/desactivar desde `/users`; la agenda de recepción también persiste los turnos que crea. Los pagos siguen siendo de solo lectura. Para volver al estado original del fixture: borrar las claves `patasana_*` y `patasana_seed_version` en DevTools → Application → Local Storage; al recargar se vuelven a sembrar.
 
 ---
 
@@ -272,8 +284,8 @@ Entidades principales (campos de los fixtures):
 
 ### Lógica de dominio destacada
 
-- **Slots de turnos** (`features/appointments/utils.js`): bloques de 30 min de 09:00 a 17:30 (`TIME_SLOTS`); `getFreeSlots()` excluye los turnos del veterinario (salvo cancelados) y, si la fecha es hoy, los horarios ya pasados. El importe base de una consulta del cliente es `DEFAULT_AMOUNT` ($10.000).
-- **Agenda de recepción** (`Scheduler` + `NewAppointmentModal`): recepción puede crear turnos confirmados desde la vista Día/Semana o con el botón “Nuevo turno”. Se validan fecha, horario libre, solapamientos y campos; el turno se persiste con `createAppointment` y queda visible en `/appointments` y en la agenda del veterinario.
+- **Slots de turnos** (`features/appointments/utils.js`): bloques de 30 min de 09:00 a 17:30 (`TIME_SLOTS`); `getFreeSlots()` excluye los turnos no cancelados del veterinario para esa fecha y normaliza fechas/horas. **Las fechas y horas pasadas se permiten** para poder cargar turnos históricos. El importe base de una consulta del cliente es `DEFAULT_AMOUNT` ($10.000).
+- **Agenda de recepción** (`Scheduler` + `NewAppointmentModal`): recepción puede crear turnos confirmados desde la vista Día/Semana o con el botón “Nuevo turno”, incluso en fechas pasadas. Se validan horario libre, solapamientos y campos; el turno se persiste con `createAppointment` y queda visible en `/appointments` y en la agenda del veterinario.
 - **Estados y metadatos de rol** (`features/treatments/constants.js`): `TREATMENT_STATUS`, `APPOINTMENT_STATUS`, `ROLE_META` (etiqueta, color, prefijo `Dr. ` para veterinarios), `getDisplayName()`, `formatDate()` (DD/MM/YYYY), `formatCurrency()` (`$` con separador `es-AR`).
 
 ---

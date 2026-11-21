@@ -7,6 +7,12 @@ export default function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
 
     const login = (userData) => {
+        if (userData?.active === false) {
+            throw new Error(
+                'Tu cuenta está desactivada. Contactá a la veterinaria.'
+            );
+        }
+
         setUser(userData);
     };
 
